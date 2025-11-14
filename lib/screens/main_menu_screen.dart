@@ -5,6 +5,10 @@ import 'package:http/http.dart' as http;
 import 'dart:async';
 import 'dart:convert';
 import 'dart:ui' as ui;
+import 'package:pdf/widgets.dart' as pw;
+import 'package:pdf/pdf.dart';
+import 'package:printing/printing.dart';
+import 'package:flutter/services.dart';
 import 'sensor_dashboard_screen.dart';
 import 'image_gallery_screen.dart';
 import '../widgets/bottom_navigation_widget.dart';
@@ -97,7 +101,9 @@ class _MainMenuScreenState extends State<MainMenuScreen> {
     final prefs = await SharedPreferences.getInstance();
     _esp32Ip = prefs.getString("esp32_ip") ?? "";
     final savedApi = prefs.getString('api_base_url') ?? '';
-    _apiBaseUrl = savedApi.isNotEmpty ? savedApi : AppConfig.DEFAULT_API_BASE_URL;
+    _apiBaseUrl = savedApi.isNotEmpty
+        ? savedApi
+        : AppConfig.DEFAULT_API_BASE_URL;
     await _fetchSensorDataWithDebounce();
   }
 
@@ -248,10 +254,7 @@ class _MainMenuScreenState extends State<MainMenuScreen> {
                     gradient: const LinearGradient(
                       begin: Alignment.topLeft,
                       end: Alignment.bottomRight,
-                      colors: [
-                        Color(0xFF00E0A6),
-                        Color(0xFF00B7B0),
-                      ],
+                      colors: [Color(0xFF00E0A6), Color(0xFF00B7B0)],
                     ),
                     boxShadow: const [
                       BoxShadow(
@@ -290,18 +293,17 @@ class _MainMenuScreenState extends State<MainMenuScreen> {
     double screenWidth = MediaQuery.of(context).size.width;
     double cardPadding = (screenWidth * 0.035).clamp(14.0, 18.0);
     double buttonSpacing = (screenWidth * 0.015).clamp(10.0, 12.0);
-    
+
     return Card(
       elevation: 6,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       child: Container(
         decoration: BoxDecoration(
-          color: const Color(0xFFE6FFF5), // fondo tarjeta verde muy claro (crypto)
+          color: const Color(
+            0xFFE6FFF5,
+          ), // fondo tarjeta verde muy claro (crypto)
           borderRadius: BorderRadius.circular(16),
-          border: Border.all(
-            color: const Color(0xFFE6FFF5),
-            width: 1,
-          ),
+          border: Border.all(color: const Color(0xFFE6FFF5), width: 1),
           boxShadow: const [
             BoxShadow(
               color: Color(0x2600A078), // sombra suave rgba(0,160,120,0.15)
@@ -330,7 +332,7 @@ class _MainMenuScreenState extends State<MainMenuScreen> {
                   const Text(
                     'Accesos Rápidos',
                     style: TextStyle(
-                      fontSize: 17, 
+                      fontSize: 17,
                       fontWeight: FontWeight.bold,
                       color: Color(0xFF004C3F), // texto principal crypto
                       letterSpacing: 0.2,
@@ -338,50 +340,68 @@ class _MainMenuScreenState extends State<MainMenuScreen> {
                   ),
                 ],
               ),
-              SizedBox(height: cardPadding * 0.5),
-  Row(
-    mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-    children: [
-      Flexible(
-        flex: 1,
-        child: _buildQuickAccessButton(
-          'Sensores',
-          Icons.dashboard,
-          const Color(0xFF43A047), // Verde 600
-          () {
-            Navigator.push(
-              context,
-              MaterialPageRoute(
-                builder: (context) =>
-                    SensorDashboardScreen(ip: _esp32Ip),
+              const SizedBox(height: 16),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Flexible(
+                    flex: 1,
+                    child: _buildQuickAccessButton(
+                      'Sensores',
+                      Icons.dashboard,
+                      const Color(0xFF43A047), // Verde 600
+                      () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) =>
+                                SensorDashboardScreen(ip: _esp32Ip),
+                          ),
+                        );
+                      },
+                      iconAsset: AppIcons.sensor,
+                      iconScale: 1.5,
+                    ),
+                  ),
+                  const SizedBox(width: 16),
+                  Flexible(
+                    flex: 1,
+                    child: _buildQuickAccessButton(
+                      'Galería',
+                      Icons.photo_library,
+                      const Color(0xFF2E7D32), // Verde 800
+                      () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => const ImageGalleryScreen(),
+                          ),
+                        );
+                      },
+                      iconAsset: AppIcons.gallery,
+                      iconScale: 1.5,
+                    ),
+                  ),
+                  const SizedBox(width: 16),
+                  Flexible(
+                    flex: 1,
+                    child: Semantics(
+                      label: 'Download ',
+                      button: true,
+                      child: _buildQuickAccessButton(
+                        'Download',
+                        Icons.picture_as_pdf,
+                        const Color(0xFF2E7D32),
+                        () {
+                          _generateAndDownloadPdf();
+                        },
+                        iconAsset: 'recursos/iconos/archivo-pdf.png',
+                        iconScale: 1.5,
+                      ),
+                    ),
+                  ),
+                ],
               ),
-            );
-          },
-          iconAsset: AppIcons.sensor,
-          iconScale: 1.5,
-        ),
-      ),
-      SizedBox(width: buttonSpacing),
-       Flexible(
-         flex: 1,
-         child: _buildQuickAccessButton(
-           'Galería',
-           Icons.photo_library,
-           const Color(0xFF2E7D32), // Verde 800
-           () {
-             Navigator.push(
-               context,
-               MaterialPageRoute(
-                 builder: (context) => const ImageGalleryScreen(),
-               ),
-             );
-           },
-           iconAsset: AppIcons.gallery,
-            iconScale: 1.5,
-         ),
-       ),
-    ],
-  ),
             ],
           ),
         ),
@@ -406,7 +426,10 @@ class _MainMenuScreenState extends State<MainMenuScreen> {
     // Estimamos la altura necesaria en función del icono, texto y padding,
     // y garantizamos que el contenedor sea lo suficientemente alto para evitar overflow.
     double contentHeightEstimate =
-        effectiveIconSize + 8 /*espaciado*/ + (textSize * 1.6) + (internalPadding * 1.6);
+        effectiveIconSize +
+        8 /*espaciado*/ +
+        (textSize * 1.6) +
+        (internalPadding * 1.6);
     double containerHeight = contentHeightEstimate > containerHeightBase
         ? contentHeightEstimate
         : containerHeightBase;
@@ -459,10 +482,7 @@ class _MainMenuScreenState extends State<MainMenuScreen> {
                   gradient: const LinearGradient(
                     begin: Alignment.topLeft,
                     end: Alignment.bottomRight,
-                    colors: [
-                      Color(0xFF00E0A6),
-                      Color(0xFF00B7B0),
-                    ],
+                    colors: [Color(0xFF00E0A6), Color(0xFF00B7B0)],
                   ),
                   borderRadius: BorderRadius.circular(16),
                   boxShadow: dynamicShadows,
@@ -481,9 +501,17 @@ class _MainMenuScreenState extends State<MainMenuScreen> {
                               height: effectiveIconSize,
                               fit: BoxFit.contain,
                               errorBuilder: (context, error, stackTrace) =>
-                                  Icon(icon, color: const Color(0xFF00E0A6), size: effectiveIconSize),
+                                  Icon(
+                                    icon,
+                                    color: const Color(0xFF00E0A6),
+                                    size: effectiveIconSize,
+                                  ),
                             )
-                          : Icon(icon, color: const Color(0xFF00E0A6), size: effectiveIconSize),
+                          : Icon(
+                              icon,
+                              color: const Color(0xFF00E0A6),
+                              size: effectiveIconSize,
+                            ),
                     ),
                     const SizedBox(height: 8),
                     Text(
@@ -507,6 +535,122 @@ class _MainMenuScreenState extends State<MainMenuScreen> {
       },
     );
   }
+
+  Future<void> _generateAndDownloadPdf() async {
+    try {
+      final id = '1MWKrLEGAUit61zq06XJ8_RdKuxX_STbnNqBRlcTAjio';
+      final sheet = 'LecturasPorMinuto';
+      final url = Uri.parse('https://docs.google.com/spreadsheets/d/' + id + '/gviz/tq?tqx=out:csv&sheet=' + sheet);
+      final res = await http.get(url).timeout(const Duration(seconds: 10));
+      if (res.statusCode != 200) {
+        throw Exception('HTTP ' + res.statusCode.toString());
+      }
+      final dataRows = _parseCsv(res.body);
+      final logoBytes = (await rootBundle.load('assets/icons/ecogrid_g.png')).buffer.asUint8List();
+      final tzNow = DateTime.now().toUtc().subtract(const Duration(hours: 5));
+      String two(int n) => n.toString().padLeft(2, '0');
+      final stamp = two(tzNow.day) + '/' + two(tzNow.month) + '/' + tzNow.year.toString() + ' ' + two(tzNow.hour) + ':' + two(tzNow.minute);
+      final fileName = 'LecturasPorMinuto_' + tzNow.year.toString() + two(tzNow.month) + two(tzNow.day) + '_' + two(tzNow.hour) + two(tzNow.minute) + '.pdf';
+
+      final headers = dataRows.isNotEmpty ? dataRows.first : <String>[];
+      final bodyRows = dataRows.length > 1 ? dataRows.sublist(1) : <List<String>>[];
+
+      final doc = pw.Document();
+      doc.addPage(
+        pw.Page(
+          pageFormat: PdfPageFormat.a4,
+          build: (pw.Context context) {
+            return pw.Padding(
+              padding: const pw.EdgeInsets.all(24),
+              child: pw.Column(
+                crossAxisAlignment: pw.CrossAxisAlignment.stretch,
+                children: [
+                  pw.Center(child: pw.Image(pw.MemoryImage(logoBytes), width: 120)),
+                  pw.SizedBox(height: 12),
+                  pw.Center(child: pw.Text(stamp, style: pw.TextStyle(fontSize: 12))),
+                  pw.SizedBox(height: 16),
+                  pw.Center(child: pw.Text('Environmental_Readings_Log', style: pw.TextStyle(fontSize: 14, fontWeight: pw.FontWeight.bold))),
+                  pw.SizedBox(height: 8),
+                  _buildTable(headers, bodyRows),
+                  pw.Spacer(),
+                  pw.Divider(),
+                  pw.Center(child: pw.Text('© EcoGrid', style: pw.TextStyle(fontSize: 10))),
+                ],
+              ),
+            );
+          },
+        ),
+      );
+      final bytes = await doc.save();
+      await Printing.sharePdf(bytes: bytes, filename: fileName);
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Error al generar PDF')));
+      }
+    }
+  }
+
+  List<List<String>> _parseCsv(String s) {
+    final List<List<String>> rows = [];
+    List<String> row = [];
+    final buf = StringBuffer();
+    bool inQuotes = false;
+    for (int i = 0; i < s.length; i++) {
+      final c = s[i];
+      if (c == '"') {
+        if (inQuotes && i + 1 < s.length && s[i + 1] == '"') {
+          buf.write('"');
+          i++;
+        } else {
+          inQuotes = !inQuotes;
+        }
+      } else if (c == ',' && !inQuotes) {
+        row.add(buf.toString());
+        buf.clear();
+      } else if ((c == '\n' || c == '\r') && !inQuotes) {
+        if (buf.isNotEmpty || row.isNotEmpty) {
+          row.add(buf.toString());
+          buf.clear();
+          rows.add(row);
+          row = [];
+        }
+      } else {
+        buf.write(c);
+      }
+    }
+    if (buf.isNotEmpty || row.isNotEmpty) {
+      row.add(buf.toString());
+      rows.add(row);
+    }
+    return rows;
+  }
+
+  pw.Widget _buildTable(List<String> header, List<List<String>> data) {
+    final headerCells = header
+        .map((h) => pw.Padding(padding: const pw.EdgeInsets.all(4), child: pw.Text(h, style: pw.TextStyle(fontWeight: pw.FontWeight.bold))))
+        .toList();
+    final rowWidgets = <pw.TableRow>[];
+    for (int i = 0; i < data.length; i++) {
+      final cells = data[i]
+          .map((c) => pw.Padding(padding: const pw.EdgeInsets.all(4), child: pw.Text(c, style: const pw.TextStyle(fontSize: 10))))
+          .toList();
+      rowWidgets.add(pw.TableRow(
+        decoration: pw.BoxDecoration(color: i % 2 == 1 ? PdfColors.grey100 : PdfColors.white),
+        children: cells,
+      ));
+    }
+    return pw.Table(
+      border: pw.TableBorder.all(width: 0.3, color: PdfColors.grey),
+      children: [
+        pw.TableRow(
+          decoration: const pw.BoxDecoration(color: PdfColors.grey300),
+          children: headerCells,
+        ),
+        ...rowWidgets,
+      ],
+    );
+  }
+
 
   Widget _buildHeaderImage() {
     final screenHeight = MediaQuery.of(context).size.height;
@@ -547,14 +691,9 @@ class _MainMenuScreenState extends State<MainMenuScreen> {
                     left: 12,
                     top: 6, // más arriba dentro del header
                     child: _buildCircularTopButton(
-                      icon: Icons.arrow_back_ios_new, // flecha más delgada
+                      icon: Icons.arrow_back_ios_new,
                       baseIconColor: const Color(0xFF004C3F),
-                      onTap: () {
-                        // Navegar directamente a la pantalla de configuración de IP
-                        if (mounted) {
-                          context.go('/ip');
-                        }
-                      },
+                      onTap: () {},
                       semanticsLabel: 'Atrás',
                     ),
                   ),
@@ -563,7 +702,8 @@ class _MainMenuScreenState extends State<MainMenuScreen> {
                     right: 12,
                     top: 6, // más arriba dentro del header
                     child: _buildCircularTopButton(
-                      icon: Icons.notifications_none_outlined, // campana de notificaciones
+                      icon: Icons
+                          .notifications_none_outlined, // campana de notificaciones
                       showBadge: true,
                       baseIconColor: const Color(0xFF004C3F),
                       onTap: () {
@@ -634,14 +774,17 @@ class _MainMenuScreenState extends State<MainMenuScreen> {
       button: true,
       child: StatefulBuilder(
         builder: (context, setInnerState) {
-          Color effectiveIconColor = (isHovered || isPressed) ? Colors.white : baseIconColor;
+          Color effectiveIconColor = (isHovered || isPressed)
+              ? Colors.white
+              : baseIconColor;
           return MouseRegion(
             onEnter: (_) => setInnerState(() => isHovered = true),
             onExit: (_) => setInnerState(() => isHovered = false),
             child: InkWell(
               onTap: onTap,
               borderRadius: BorderRadius.circular(24),
-              onHighlightChanged: (value) => setInnerState(() => isPressed = value),
+              onHighlightChanged: (value) =>
+                  setInnerState(() => isPressed = value),
               hoverColor: Colors.transparent,
               splashColor: Colors.transparent,
               child: ClipOval(
@@ -694,10 +837,15 @@ class _MainMenuScreenState extends State<MainMenuScreen> {
                               decoration: BoxDecoration(
                                 color: const Color(0xFF66BB6A),
                                 shape: BoxShape.circle,
-                                border: Border.all(color: Colors.white, width: 1),
+                                border: Border.all(
+                                  color: Colors.white,
+                                  width: 1,
+                                ),
                                 boxShadow: const [
                                   BoxShadow(
-                                    color: Color(0x2600E0A6), // sombra sutil acorde
+                                    color: Color(
+                                      0x2600E0A6,
+                                    ), // sombra sutil acorde
                                     blurRadius: 2,
                                     offset: Offset(0, 1),
                                   ),

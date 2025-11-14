@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:go_router/go_router.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-
 import 'sensor_detail_page.dart';
 import '../widgets/bottom_navigation_widget.dart';
 
@@ -154,6 +153,11 @@ class _SensorDashboardScreenState extends State<SensorDashboardScreen> {
                     imagePath: "assets/images/sensor_dashboard/s_tds.png",
                     onTap: () => _abrirSensor("tds", "TDS"),
                   ),
+                  SensorCardWithImage(
+                    titulo: "UV",
+                    imagePath: "assets/icons/sensor_s.png",
+                    onTap: () => _abrirSensor("uv", "UV"),
+                  ),
                 ],
               ),
             ),
@@ -252,6 +256,8 @@ class _SensorCardWithImageState extends State<SensorCardWithImage> {
       case 'TDS':
       case 'PPM':
         return const [Color(0xFF2BC0E4), Color(0xFFEAECC6)];
+      case 'UV':
+        return const [Color(0xFFFFC0CB), Color(0xFFFF9AA2)];
       default:
         return const [Color(0xFF00E0A6), Color(0xFF00B894)]; // fallback mint
     }
@@ -268,6 +274,8 @@ class _SensorCardWithImageState extends State<SensorCardWithImage> {
       case 'TDS':
       case 'PPM':
         return const Color(0xFF2BC0E4);
+      case 'UV':
+        return const Color(0xFFFF737A);
       default:
         return const Color(0xFF00E0A6);
     }

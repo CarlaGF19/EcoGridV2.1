@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'device_config_screen.dart';
+import 'package:go_router/go_router.dart';
 
 class WelcomeScreen extends StatelessWidget {
   const WelcomeScreen({super.key});
@@ -54,12 +54,7 @@ class WelcomeScreen extends StatelessWidget {
                 height: 56,
                 child: ElevatedButton(
                   onPressed: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (context) => const DeviceConfigScreen(),
-                      ),
-                    );
+                    context.go('/main-menu');
                   },
                   style: ElevatedButton.styleFrom(
                     backgroundColor: Colors.green,

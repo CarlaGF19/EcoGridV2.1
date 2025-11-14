@@ -147,6 +147,10 @@ class _SensorDetailPageState extends State<SensorDetailPage> {
           case "tds":
             tempValor = (data["tds"] ?? 0).toDouble();
             break;
+          case "uv":
+            tempValor = (data["uv"] ?? 0).toDouble();
+            break;
+          
         }
 
         if (mounted) {
@@ -184,6 +188,9 @@ class _SensorDetailPageState extends State<SensorDetailPage> {
             break;
           case "tds":
             valor = (data["tds"] ?? 0).toDouble();
+            break;
+          case "uv":
+            valor = (data["uv"] ?? 0).toDouble();
             break;
         }
         if (mounted) {

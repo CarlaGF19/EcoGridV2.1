@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'device_config_screen.dart';
 import '../widgets/bottom_navigation_widget.dart';
 
 class DeviceConnectionScreen extends StatefulWidget {
@@ -45,7 +46,7 @@ class _DeviceConnectionScreenState extends State<DeviceConnectionScreen> {
           children: [
             _buildConnectionStatus(),
             const SizedBox(height: 16),
-            _buildDevicesList(),
+            _buildIpConfigButton(),
             const SizedBox(height: 16),
             _buildConnectionStatistics(),
             const SizedBox(height: 16), // Espacio adicional para evitar overflow
@@ -114,61 +115,30 @@ class _DeviceConnectionScreenState extends State<DeviceConnectionScreen> {
     );
   }
 
-  Widget _buildDevicesList() {
-    return Card(
-      elevation: 4,
-      child: Padding(
-        padding: const EdgeInsets.all(12.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              children: [
-                const Icon(Icons.devices, color: Color(0xFF498428)), // Verde oscuro
-                const SizedBox(width: 8),
-                const Text(
-                  'Lista de Dispositivos Detectados',
-                  style: TextStyle(
-                    fontSize: 18,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 16),
-            _buildDeviceItem(
-              icon: Icons.memory,
-              title: 'ESP32 Principal (Sensores IoT)',
-              status: 'Activo',
-              statusColor: Colors.green,
-              details: ['Sensores: 4 activos', 'Batería: 85%'],
-            ),
-            const SizedBox(height: 12),
-            _buildDeviceItem(
-              icon: Icons.camera_alt,
-              title: 'Cámara IoT',
-              status: 'Standby',
-              statusColor: Colors.orange,
-              details: ['Resolución: 1080p'],
-            ),
-            const SizedBox(height: 12),
-            ElevatedButton.icon(
-              onPressed: () {
-                // Implementar búsqueda de dispositivos
-                _showSearchDialog();
-              },
-              icon: const Icon(Icons.search),
-              label: const Text('Buscar nuevos dispositivos'),
-              style: ElevatedButton.styleFrom(
-                backgroundColor: const Color(0xFF2196F3),
-                foregroundColor: Colors.white,
-              ),
-            ),
-          ],
+  Widget _buildIpConfigButton() {
+    return SizedBox(
+      width: double.infinity,
+      child: ElevatedButton.icon(
+        onPressed: () {
+          showModalBottomSheet(
+            context: context,
+            isScrollControlled: true,
+            builder: (context) {
+              return const DeviceConfigScreen();
+            },
+          );
+        },
+        icon: const Icon(Icons.settings_ethernet),
+        label: const Text('Configuración de IP'),
+        style: ElevatedButton.styleFrom(
+          backgroundColor: const Color(0xFF2196F3),
+          foregroundColor: Colors.white,
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
         ),
       ),
     );
   }
+
 
   Widget _buildConnectionStatistics() {
     return Card(

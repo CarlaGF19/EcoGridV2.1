@@ -103,18 +103,6 @@ class _DeviceConfigScreenState extends State<DeviceConfigScreen> {
           ],
         ),
       ),
-      floatingActionButton: FloatingActionButton(
-        mini: true,
-        backgroundColor: const Color(0xFF004C3F), // Verde oscuro del MainMenu
-        onPressed: () {
-          context.go('/main-menu');
-        },
-        child: const Icon(
-          Icons.arrow_forward,
-          size: 20,
-          color: Colors.white,
-        ),
-      ),
     );
   }
 }
