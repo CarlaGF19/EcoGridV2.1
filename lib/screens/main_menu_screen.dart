@@ -944,7 +944,8 @@ class _PDFPageState extends State<PDFPage> {
               ),
             ),
             child: ConstrainedBox(
-              constraints: const BoxConstraints(maxWidth: 320, maxHeight: 420),
+              //box
+              constraints: const BoxConstraints(maxWidth: 320, maxHeight: 500),
               child: child!,
             ),
           ),
@@ -1019,7 +1020,7 @@ class _PDFPageState extends State<PDFPage> {
               ),
             ),
             child: ConstrainedBox(
-              constraints: const BoxConstraints(maxWidth: 320, maxHeight: 420),
+              constraints: const BoxConstraints(maxWidth: 320, maxHeight: 500),
               child: child!,
             ),
           ),
