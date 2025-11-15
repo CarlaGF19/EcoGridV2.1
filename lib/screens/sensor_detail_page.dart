@@ -95,24 +95,41 @@ class _SensorDetailPageState extends State<SensorDetailPage> {
   // Obtiene el historial para el GRÁFICO (endpoint=history)
   Future<void> _fetchApiHistory() async {
     try {
-      final uri = Uri.parse(
-        '$apiBaseUrl?endpoint=history&type=${widget.tipo}&limit=15',
-      );
-      final response = await http.get(uri).timeout(const Duration(seconds: 10));
+      final List<String> tipos = widget.tipo == 'humedad'
+          ? <String>['humedadAmbiente', 'humedad']
+          : <String>[widget.tipo];
 
-      if (response.statusCode == 200) {
-        final data = json.decode(response.body);
-        if (data['points'] != null) {
+      List<double> serie = [];
+      for (final t in tipos) {
+        final uri = Uri.parse('$apiBaseUrl?endpoint=history&type=$t&limit=15');
+        debugPrint('Solicitando historial: $uri');
+        final response = await http
+            .get(uri)
+            .timeout(const Duration(seconds: 10));
+        if (response.statusCode == 200) {
+          final data = json.decode(response.body);
           final List<dynamic> points = (data['points'] ?? []) as List<dynamic>;
-          final List<double> serie = points
-              .map((p) => ((p['value'] ?? 0) as num).toDouble())
-              .toList();
-          if (mounted) {
-            setState(() {
-              valores = serie;
-            });
+          if (points.isNotEmpty) {
+            serie = points
+                .map((p) => ((p['value'] ?? 0) as num).toDouble())
+                .where((v) => v.isFinite)
+                .toList();
+            if (widget.tipo == 'humedad') {
+              debugPrint(
+                'Historial humedad puntos=${serie.length}, muestra=${serie.take(3).toList()}',
+              );
+            }
+            break;
           }
+        } else {
+          debugPrint('Historial $t respondió ${response.statusCode}');
         }
+      }
+
+      if (mounted) {
+        setState(() {
+          valores = serie;
+        });
       }
     } catch (e) {
       debugPrint("Error en _fetchApiHistory: $e");
@@ -330,6 +347,8 @@ class _SensorDetailPageState extends State<SensorDetailPage> {
                     sideTitles: SideTitles(showTitles: false),
                   ),
                 ),
+                minY: widget.tipo == 'humedad' ? 0 : null,
+                maxY: widget.tipo == 'humedad' ? 100 : null,
                 borderData: FlBorderData(show: true),
                 lineBarsData: [
                   LineChartBarData(
