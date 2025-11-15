@@ -125,7 +125,7 @@ class _SensorDashboardScreenState extends State<SensorDashboardScreen> {
             // Eliminada barra de entrada de año/hora
             Expanded(
               child: GridView.count(
-                crossAxisCount: 2,
+                crossAxisCount: screenWidth < 360 ? 1 : (screenWidth < 768 ? 2 : 3),
                 crossAxisSpacing: 12,
                 mainAxisSpacing: 12,
                 childAspectRatio: aspect,
@@ -656,6 +656,7 @@ class _SensorActionButtonState extends State<SensorActionButton> {
       onEnter: (_) => setState(() => _hovering = true),
       onExit: (_) => setState(() => _hovering = false),
       child: GestureDetector(
+        behavior: HitTestBehavior.opaque,
         onTapDown: (_) => setState(() => _pressed = true),
         onTapCancel: () => setState(() => _pressed = false),
         onTapUp: (_) => setState(() => _pressed = false),
