@@ -382,37 +382,32 @@ class _MainMenuScreenState extends State<MainMenuScreen> {
                       iconScale: 1.5,
                     ),
                   ),
-                  const SizedBox(width: 16),
-
-                  // ▼▼▼ ¡BOTÓN "DOWNLOAD" CORREGIDO! ▼▼▼
-                  Flexible(
-                    flex: 1,
-                    child: Semantics(
-                      label: 'Download PDF por Rango', // Semántica actualizada
-                      button: true,
-                      child: _buildQuickAccessButton(
-                        'Download',
-                        Icons.picture_as_pdf,
-                        const Color(0xFF2E7D32),
-                        () {
-                          // ¡ACCIÓN REEMPLAZADA!
-                          // Navegamos a la nueva pantalla PDFPage
-                          // y le pasamos la URL de la API.
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (context) =>
-                                  PDFPage(apiBaseUrl: _apiBaseUrl),
-                            ),
-                          );
-                        },
-                        iconAsset: 'recursos/iconos/archivo-pdf.png',
-                        iconScale: 1.5,
-                      ),
-                    ),
-                  ),
-                  // ▲▲▲ ¡FIN DE LA CORRECCIÓN! ▲▲▲
                 ],
+              ),
+              const SizedBox(height: 13),
+              // Botón Download alargado debajo de Sensores y Galería
+              Semantics(
+                label: 'Download PDF por Rango',
+                button: true,
+                child: SizedBox(
+                  width: double.infinity,
+                  child: _buildQuickAccessButton(
+                    'Download',
+                    Icons.picture_as_pdf,
+                    const Color(0xFF2E7D32),
+                    () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) =>
+                              PDFPage(apiBaseUrl: _apiBaseUrl),
+                        ),
+                      );
+                    },
+                    iconAsset: 'assets/icons/archivo_pdf.png',
+                    iconScale: 1.2,
+                  ),
+                ),
               ),
             ],
           ),
@@ -853,7 +848,10 @@ class _PDFPageState extends State<PDFPage> {
     String? semanticLabel,
     IconData? icon,
     double textScale = 1.0,
-    EdgeInsets contentPadding = const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+    EdgeInsets contentPadding = const EdgeInsets.symmetric(
+      horizontal: 12,
+      vertical: 8,
+    ),
   }) {
     const Color base = Color.fromARGB(255, 109, 220, 175);
     const Color hover = Color(0xFF0F6659);
