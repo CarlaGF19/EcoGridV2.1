@@ -5,6 +5,7 @@ import 'package:http/http.dart' as http; // Se mantiene para _fetchSensorData
 import 'dart:async';
 import 'dart:convert';
 import 'dart:ui' as ui;
+import 'dart:math' as math;
 import 'package:pdf/widgets.dart' as pw;
 import 'package:pdf/pdf.dart';
 // import 'package:printing/printing.dart'; // <--- ELIMINADO (ya no se usa)
@@ -1284,100 +1285,583 @@ class _PDFPageState extends State<PDFPage> {
 
   @override
   Widget build(BuildContext context) {
-    // Construcción del scaffold conforme a tema global
+    // Paleta de colores verdes extraída del menú principal
+    const Color verdePrincipal = Color(0xFF43A047); // Verde 600 - Sensores
+    const Color verdeOscuro = Color(0xFF2E7D32); // Verde 800 - Galería
+    const Color verdeClaro = Color(0xFF66BB6A); // Verde 400 - para hover
+    const Color verdeSombra = Color(0xFF4CAF50); // Verde 500 - para sombras
 
     return Scaffold(
-      appBar: AppBar(
-        title: const Text(
-          "Generar Reporte PDF",
-          style: TextStyle(
-            fontWeight: FontWeight.w600,
-            color: Color(0xFF009E73),
-          ),
-        ),
-        backgroundColor: Colors.white,
-        elevation: 2,
-        iconTheme: const IconThemeData(color: Color(0xFF00E0A6)),
-      ),
       backgroundColor: Colors.white,
-      body: LayoutBuilder(
-        builder: (context, constraints) {
-          final bool isSmall = constraints.maxWidth < 480;
-          final EdgeInsets screenPad = EdgeInsets.all(isSmall ? 24 : 32);
-          return Center(
-            child: cargando
-                ? const CircularProgressIndicator()
-                : Padding(
-                    padding: screenPad,
-                    child: SingleChildScrollView(
-                      padding: EdgeInsets.only(
-                        bottom: MediaQuery.of(context).viewPadding.bottom,
+      body: Column(
+        children: [
+          // Header con diseño consistente al Main Menu
+          _buildPDFHeader(),
+
+          // Contenido principal
+          Expanded(
+            child: LayoutBuilder(
+              builder: (context, constraints) {
+                final bool isSmall = constraints.maxWidth < 480;
+
+                return Column(
+                  crossAxisAlignment: CrossAxisAlignment.center,
+                  children: [
+                    // Espaciador superior
+                    const SizedBox(height: 24),
+
+                    // Contenedor principal centrado con diseño verde
+                    Container(
+                      width: math.min(constraints.maxWidth * 0.9, 800),
+                      margin: const EdgeInsets.symmetric(horizontal: 16),
+                      padding: EdgeInsets.all(isSmall ? 20 : 32),
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(16),
+                        boxShadow: [
+                          BoxShadow(
+                            color: verdeSombra.withOpacity(0.15),
+                            spreadRadius: 2,
+                            blurRadius: 15,
+                            offset: const Offset(0, 8),
+                          ),
+                        ],
+                        border: Border.all(
+                          color: verdeClaro.withOpacity(0.3),
+                          width: 1,
+                        ),
                       ),
                       child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.stretch,
+                        mainAxisSize: MainAxisSize.min,
                         children: [
-                          Column(
-                            crossAxisAlignment: CrossAxisAlignment.center,
-                            children: [
-                              _blueButton(
-                                label: fechaInicio == null
-                                    ? 'Fecha de Inicio'
-                                    : '${fechaInicio!.year.toString().padLeft(4, '0')}-${fechaInicio!.month.toString().padLeft(2, '0')}-${fechaInicio!.day.toString().padLeft(2, '0')}',
-                                onTap: seleccionarFechaInicio,
-                                key: const ValueKey('btn-start-date'),
-                                semanticLabel: 'Seleccionar fecha inicio',
-                                icon: Icons.calendar_today,
-                                enabled: !platform.isAndroidWeb(),
-                              ),
-                              const SizedBox(height: 18),
-                              _blueButton(
-                                label: fechaFin == null
-                                    ? 'Fecha de Fin'
-                                    : '${fechaFin!.year.toString().padLeft(4, '0')}-${fechaFin!.month.toString().padLeft(2, '0')}-${fechaFin!.day.toString().padLeft(2, '0')}',
-                                onTap: seleccionarFechaFin,
-                                key: const ValueKey('btn-end-date'),
-                                semanticLabel: 'Seleccionar fecha fin',
-                                icon: Icons.calendar_today,
-                                enabled: !platform.isAndroidWeb(),
-                              ),
-                              const SizedBox(height: 18),
-                              _blueButton(
-                                label: 'Descargar Reporte',
-                                onTap: _fechasValidas ? generarPDF : null,
-                                key: const ValueKey('btn-download'),
-                                semanticLabel: 'Descargar Reporte',
-                                enabled:
-                                    _fechasValidas && !platform.isAndroidWeb(),
-                                icon: Icons.picture_as_pdf,
-                                textScale: 0.75,
-                                contentPadding: const EdgeInsets.symmetric(
-                                  horizontal: 10,
-                                  vertical: 4,
-                                ),
-                              ),
-                            ],
-                          ),
-                          const SizedBox(height: 12),
-                          if (error != null) ...[
-                            const SizedBox(height: 20),
-                            Semantics(
-                              label: 'Mensaje de error',
-                              child: Text(
-                                error!,
-                                style: const TextStyle(
-                                  color: Colors.redAccent,
-                                  fontSize: 16,
-                                ),
-                                textAlign: TextAlign.center,
-                              ),
+                          // Título con estilo verde
+                          Container(
+                            padding: const EdgeInsets.symmetric(
+                              vertical: 16,
+                              horizontal: 24,
                             ),
-                          ],
+                            decoration: BoxDecoration(
+                              gradient: LinearGradient(
+                                colors: [verdePrincipal, verdeOscuro],
+                                begin: Alignment.topLeft,
+                                end: Alignment.bottomRight,
+                              ),
+                              borderRadius: BorderRadius.circular(12),
+                              boxShadow: [
+                                BoxShadow(
+                                  color: verdePrincipal.withOpacity(0.3),
+                                  spreadRadius: 1,
+                                  blurRadius: 8,
+                                  offset: const Offset(0, 4),
+                                ),
+                              ],
+                            ),
+                            child: Row(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                Icon(
+                                  Icons.picture_as_pdf,
+                                  color: const Color.fromARGB(
+                                    255,
+                                    255,
+                                    255,
+                                    255,
+                                  ),
+                                  size: 28,
+                                ),
+                                const SizedBox(width: 12),
+                                Text(
+                                  'Generar Reporte PDF',
+                                  style: TextStyle(
+                                    fontSize: 16,
+                                    fontWeight: FontWeight.w700,
+                                    color: const Color.fromARGB(
+                                      255,
+                                      255,
+                                      255,
+                                      255,
+                                    ),
+                                    letterSpacing: 0.5,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+
+                          const SizedBox(height: 24),
+
+                          // Contenedor de botones con estilo verde
+                          cargando
+                              ? const CircularProgressIndicator(
+                                  valueColor: AlwaysStoppedAnimation<Color>(
+                                    verdePrincipal,
+                                  ),
+                                )
+                              : Column(
+                                  children: [
+                                    _ButtonContainer(
+                                      children: [
+                                        _StyledButton(
+                                          label: fechaInicio == null
+                                              ? 'Fecha de Inicio'
+                                              : '${fechaInicio!.year.toString().padLeft(4, '0')}-${fechaInicio!.month.toString().padLeft(2, '0')}-${fechaInicio!.day.toString().padLeft(2, '0')}',
+                                          onTap: seleccionarFechaInicio,
+                                          key: const ValueKey('btn-start-date'),
+                                          semanticLabel:
+                                              'Seleccionar fecha inicio',
+                                          icon: Icons.calendar_today,
+                                          enabled: !platform.isAndroidWeb(),
+                                        ),
+                                        _StyledButton(
+                                          label: fechaFin == null
+                                              ? 'Fecha de Fin'
+                                              : '${fechaFin!.year.toString().padLeft(4, '0')}-${fechaFin!.month.toString().padLeft(2, '0')}-${fechaFin!.day.toString().padLeft(2, '0')}',
+                                          onTap: seleccionarFechaFin,
+                                          key: const ValueKey('btn-end-date'),
+                                          semanticLabel:
+                                              'Seleccionar fecha fin',
+                                          icon: Icons.calendar_today,
+                                          enabled: !platform.isAndroidWeb(),
+                                        ),
+                                        _StyledButton(
+                                          label: 'Descargar Reporte',
+                                          onTap: _fechasValidas
+                                              ? generarPDF
+                                              : null,
+                                          key: const ValueKey('btn-download'),
+                                          semanticLabel: 'Descargar Reporte',
+                                          enabled:
+                                              _fechasValidas &&
+                                              !platform.isAndroidWeb(),
+                                          icon: Icons.picture_as_pdf,
+                                        ),
+                                      ],
+                                    ),
+
+                                    if (error != null) ...[
+                                      const SizedBox(height: 20),
+                                      Container(
+                                        padding: const EdgeInsets.all(16),
+                                        decoration: BoxDecoration(
+                                          color: Colors.red.shade50,
+                                          borderRadius: BorderRadius.circular(
+                                            8,
+                                          ),
+                                          border: Border.all(
+                                            color: Colors.red.shade200,
+                                            width: 1,
+                                          ),
+                                        ),
+                                        child: Row(
+                                          children: [
+                                            Icon(
+                                              Icons.error_outline,
+                                              color: Colors.red.shade600,
+                                              size: 20,
+                                            ),
+                                            const SizedBox(width: 12),
+                                            Expanded(
+                                              child: Text(
+                                                error!,
+                                                style: TextStyle(
+                                                  color: Colors.red.shade700,
+                                                  fontSize: 14,
+                                                  fontWeight: FontWeight.w500,
+                                                ),
+                                              ),
+                                            ),
+                                          ],
+                                        ),
+                                      ),
+                                    ],
+                                  ],
+                                ),
                         ],
                       ),
                     ),
+
+                    // Espaciador inferior flexible
+                    const Spacer(),
+                  ],
+                );
+              },
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  /// Header consistente con el diseño del Main Menu
+  Widget _buildPDFHeader() {
+    final screenHeight = MediaQuery.of(context).size.height;
+    return Container(
+      width: double.infinity,
+      height: (screenHeight * 0.37), // 37% de la pantalla como en Main Menu
+      decoration: BoxDecoration(
+        borderRadius: const BorderRadius.only(
+          bottomLeft: Radius.circular(20),
+          bottomRight: Radius.circular(20),
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.15),
+            spreadRadius: 2,
+            blurRadius: 10,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: ClipRRect(
+        borderRadius: const BorderRadius.only(
+          bottomLeft: Radius.circular(20),
+          bottomRight: Radius.circular(20),
+        ),
+        child: Stack(
+          fit: StackFit.expand,
+          children: [
+            // Fondo con imagen del Main Menu
+            _buildPDFHeaderBackground(),
+            SafeArea(
+              child: Stack(
+                children: [
+                  // Flecha de retroceso alineada a la izquierda
+                  Positioned(
+                    left: 12,
+                    top: 6,
+                    child: _buildCircularTopButton(
+                      icon: Icons.arrow_back_ios_new,
+                      baseIconColor: const Color(0xFF004C3F),
+                      onTap: () => Navigator.of(context).pop(),
+                      semanticsLabel: 'Atrás',
+                    ),
                   ),
+                  // Título centrado horizontalmente (solo fondo, sin texto)
+                  const SizedBox.shrink(),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  /// Fondo del header con la misma imagen del Main Menu
+  Widget _buildPDFHeaderBackground() {
+    return Container(
+      width: double.infinity,
+      height: double.infinity,
+      decoration: const BoxDecoration(
+        image: DecorationImage(
+          image: AssetImage('assets/images/img_main_menu_screen.jpg'),
+          fit: BoxFit.cover,
+        ),
+      ),
+    );
+  }
+
+  /// Botón circular superior consistente con Main Menu
+  Widget _buildCircularTopButton({
+    required IconData icon,
+    bool showBadge = false,
+    required Color baseIconColor,
+    required VoidCallback onTap,
+    required String semanticsLabel,
+  }) {
+    bool isHovered = false;
+    bool isPressed = false;
+    return Semantics(
+      label: semanticsLabel,
+      button: true,
+      child: StatefulBuilder(
+        builder: (context, setInnerState) {
+          Color effectiveIconColor = (isHovered || isPressed)
+              ? Colors.white
+              : baseIconColor;
+          return MouseRegion(
+            onEnter: (_) => setInnerState(() => isHovered = true),
+            onExit: (_) => setInnerState(() => isHovered = false),
+            child: InkWell(
+              onTap: onTap,
+              borderRadius: BorderRadius.circular(24),
+              onHighlightChanged: (value) =>
+                  setInnerState(() => isPressed = value),
+              hoverColor: Colors.transparent,
+              splashColor: Colors.transparent,
+              child: ClipOval(
+                child: BackdropFilter(
+                  filter: ui.ImageFilter.blur(sigmaX: 8, sigmaY: 8),
+                  child: Container(
+                    width: 48,
+                    height: 48,
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      color: Colors.white.withOpacity(0.35),
+                      border: Border.all(
+                        color: Colors.white.withOpacity(0.5),
+                        width: 1,
+                      ),
+                      boxShadow: [
+                        const BoxShadow(
+                          color: Color(0x4000E0A6),
+                          blurRadius: 8,
+                          offset: Offset(0, 4),
+                        ),
+                        BoxShadow(
+                          color: (isHovered || isPressed)
+                              ? const Color(0x9900E0A6)
+                              : const Color(0x3300E0A6),
+                          blurRadius: (isHovered || isPressed) ? 12 : 8,
+                          offset: const Offset(0, 0),
+                        ),
+                      ],
+                    ),
+                    child: Stack(
+                      clipBehavior: Clip.none,
+                      children: [
+                        Center(
+                          child: Icon(
+                            icon,
+                            color: effectiveIconColor,
+                            size: 20,
+                          ),
+                        ),
+                        if (showBadge)
+                          Positioned(
+                            right: -2,
+                            top: -2,
+                            child: Container(
+                              width: 10,
+                              height: 10,
+                              decoration: BoxDecoration(
+                                color: const Color(0xFF66BB6A),
+                                shape: BoxShape.circle,
+                                border: Border.all(
+                                  color: Colors.white,
+                                  width: 1,
+                                ),
+                                boxShadow: const [
+                                  BoxShadow(
+                                    color: Color(0x2600E0A6),
+                                    blurRadius: 2,
+                                    offset: Offset(0, 1),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+            ),
           );
         },
+      ),
+    );
+  }
+}
+
+/// Nuevo contenedor de botones con diseño moderno según especificaciones
+class _ButtonContainer extends StatelessWidget {
+  final List<Widget> children;
+
+  const _ButtonContainer({super.key, required this.children});
+
+  @override
+  Widget build(BuildContext context) {
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final bool isSmallScreen = constraints.maxWidth < 480;
+        final bool isMediumScreen = constraints.maxWidth < 768;
+
+        // Paleta de colores verdes del menú principal
+        const Color verdePrincipal = Color(0xFF43A047); // Verde 600 - Sensores
+        const Color verdeClaro = Color(0xFF66BB6A); // Verde 400 - para hover
+
+        // Ancho del contenedor: 80% con máximo de 600px
+        final double containerWidth = isMediumScreen
+            ? constraints.maxWidth * 0.95
+            : math.min(constraints.maxWidth * 0.8, 600);
+
+        return Container(
+          width: containerWidth,
+          margin: const EdgeInsets.symmetric(horizontal: 16),
+          padding: const EdgeInsets.all(16),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(12), // Bordes más redondeados
+            boxShadow: [
+              BoxShadow(
+                color: verdePrincipal.withOpacity(0.15),
+                spreadRadius: 2,
+                blurRadius: 8,
+                offset: const Offset(0, 4),
+              ),
+            ],
+            border: Border.all(color: verdeClaro.withOpacity(0.3), width: 1),
+          ),
+          child: isSmallScreen
+              ? Column(
+                  children:
+                      children
+                          .map(
+                            (child) => Padding(
+                              padding: const EdgeInsets.only(bottom: 8),
+                              child: SizedBox(
+                                width: double.infinity,
+                                child: child,
+                              ),
+                            ),
+                          )
+                          .toList()
+                        ..last = Padding(
+                          padding: EdgeInsets.zero,
+                          child: SizedBox(
+                            width: double.infinity,
+                            child: children.last,
+                          ),
+                        ),
+                )
+              : Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children:
+                      children
+                          .map(
+                            (child) => Expanded(
+                              child: Padding(
+                                padding: const EdgeInsets.only(right: 8),
+                                child: child,
+                              ),
+                            ),
+                          )
+                          .toList()
+                        ..last = Expanded(
+                          child: Padding(
+                            padding: EdgeInsets.zero,
+                            child: children.last,
+                          ),
+                        ),
+                ),
+        );
+      },
+    );
+  }
+}
+
+/// Nuevo botón estilizado con paleta de colores verdes del menú principal
+class _StyledButton extends StatefulWidget {
+  final String label;
+  final VoidCallback? onTap;
+  final String semanticLabel;
+  final IconData? icon;
+  final bool enabled;
+
+  const _StyledButton({
+    super.key,
+    required this.label,
+    required this.onTap,
+    required this.semanticLabel,
+    this.icon,
+    required this.enabled,
+  });
+
+  @override
+  State<_StyledButton> createState() => _StyledButtonState();
+}
+
+class _StyledButtonState extends State<_StyledButton> {
+  bool _isHovered = false;
+
+  @override
+  Widget build(BuildContext context) {
+    // Paleta de colores verdes del menú principal
+    const Color verdePrincipal = Color(0xFF43A047); // Verde 600 - Sensores
+    const Color verdeOscuro = Color(0xFF2E7D32); // Verde 800 - Galería
+    const Color verdeClaro = Color(0xFF66BB6A); // Verde 400 - para hover
+
+    return Semantics(
+      label: widget.semanticLabel,
+      button: true,
+      enabled: widget.enabled,
+      child: MouseRegion(
+        onEnter: (_) => setState(() => _isHovered = true),
+        onExit: (_) => setState(() => _isHovered = false),
+        cursor: widget.enabled
+            ? SystemMouseCursors.click
+            : SystemMouseCursors.basic,
+        child: GestureDetector(
+          onTap: widget.enabled ? widget.onTap : null,
+          child: AnimatedContainer(
+            duration: const Duration(
+              milliseconds: 200,
+            ), // Transición suave 0.2s
+            curve: Curves.ease,
+            height: 40, // Altura uniforme de 40px
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+            decoration: BoxDecoration(
+              color: widget.enabled
+                  ? (_isHovered
+                        ? verdeClaro // Color verde claro en hover
+                        : verdePrincipal) // Color verde principal normal
+                  : verdePrincipal.withOpacity(0.4),
+              borderRadius: BorderRadius.circular(
+                6,
+              ), // Bordes redondeados de 6px
+              border: Border.all(
+                color: widget.enabled
+                    ? (_isHovered
+                          ? verdeOscuro // Color verde oscuro en hover
+                          : verdePrincipal.withOpacity(
+                              0.8,
+                            )) // Color verde normal
+                    : verdePrincipal.withOpacity(0.3),
+                width: 1,
+              ),
+              boxShadow: [
+                BoxShadow(
+                  color: _isHovered && widget.enabled
+                      ? verdePrincipal.withOpacity(0.3)
+                      : Colors.transparent,
+                  spreadRadius: 2,
+                  blurRadius: 8,
+                  offset: const Offset(0, 2),
+                ),
+              ],
+            ),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                if (widget.icon != null) ...[
+                  Icon(
+                    widget.icon,
+                    size: 16,
+                    color: widget.enabled
+                        ? Colors
+                              .white // Iconos en blanco para contraste
+                        : Colors.white.withOpacity(0.6),
+                  ),
+                  const SizedBox(width: 8),
+                ],
+                Text(
+                  widget.label,
+                  style: TextStyle(
+                    fontSize: 14, // Tamaño de fuente 14px
+                    fontWeight: FontWeight.w600, // Peso semibold (600)
+                    color: widget.enabled
+                        ? Colors
+                              .white // Texto en blanco para mejor contraste
+                        : Colors.white.withOpacity(0.6),
+                    letterSpacing: 0.2,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
       ),
     );
   }
