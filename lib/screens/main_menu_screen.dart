@@ -11,11 +11,9 @@ import 'package:pdf/pdf.dart';
 
 // --- NUEVAS IMPORTACIONES REQUERIDAS PARA PDFPage ---
 import 'package:flutter/foundation.dart' show kIsWeb;
-import 'package:dio/dio.dart'; // Para peticiones en PDFPage
-import 'dart:io'; // Para PDFPage (Móvil)
-import 'package:path_provider/path_provider.dart'; // Para PDFPage (Móvil)
-import 'package:open_file/open_file.dart'; // Para PDFPage (Móvil)
-import 'dart:html' as html; // Para PDFPage (Web)
+import 'package:dio/dio.dart';
+import '../utils/pdf_saver.dart';
+import '../utils/platform_detector.dart' as platform;
 // --- FIN NUEVAS IMPORTACIONES ---
 
 import 'sensor_dashboard_screen.dart';
@@ -1083,6 +1081,13 @@ class _PDFPageState extends State<PDFPage> {
       return;
     }
 
+    if (platform.isAndroidWeb()) {
+      setState(() {
+        error = "Esta funcionalidad está restringida en dispositivos Android.";
+      });
+      return;
+    }
+
     setState(() {
       cargando = true;
       error = null;
@@ -1194,22 +1199,8 @@ class _PDFPageState extends State<PDFPage> {
 
       final bytes = await pdf.save();
 
-      // 5. Guardar y abrir el archivo (diferente para Web y Móvil)
       final fileName = 'Reporte_${fInicio}_a_$fFin.pdf';
-      if (kIsWeb) {
-        final blob = html.Blob([bytes], 'application/pdf');
-        final url = html.Url.createObjectUrlFromBlob(blob);
-        final anchor = html.AnchorElement(href: url)
-          ..setAttribute('download', fileName)
-          ..click();
-        html.Url.revokeObjectUrl(url);
-      } else {
-        final dir = await getApplicationDocumentsDirectory();
-        final filePath = "${dir.path}/$fileName";
-        final file = File(filePath);
-        await file.writeAsBytes(bytes);
-        await OpenFile.open(filePath); // Abre el PDF
-      }
+      await savePdf(bytes, fileName);
     } catch (e) {
       setState(() => error = "Error generando PDF: $e");
     } finally {
@@ -1259,6 +1250,7 @@ class _PDFPageState extends State<PDFPage> {
                               key: const ValueKey('btn-start-date'),
                               semanticLabel: 'Seleccionar fecha inicio',
                               icon: Icons.calendar_today,
+                              enabled: !platform.isAndroidWeb(),
                             ),
                             const SizedBox(height: 18),
                             _blueButton(
@@ -1269,6 +1261,7 @@ class _PDFPageState extends State<PDFPage> {
                               key: const ValueKey('btn-end-date'),
                               semanticLabel: 'Seleccionar fecha fin',
                               icon: Icons.calendar_today,
+                              enabled: !platform.isAndroidWeb(),
                             ),
                             const SizedBox(height: 18),
                             _blueButton(
@@ -1276,7 +1269,7 @@ class _PDFPageState extends State<PDFPage> {
                               onTap: _fechasValidas ? generarPDF : null,
                               key: const ValueKey('btn-download'),
                               semanticLabel: 'Descargar Reporte',
-                              enabled: _fechasValidas,
+                              enabled: _fechasValidas && !platform.isAndroidWeb(),
                               icon: Icons.picture_as_pdf,
                             ),
                           ],
