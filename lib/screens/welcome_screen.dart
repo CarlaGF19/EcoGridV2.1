@@ -16,7 +16,7 @@ class WelcomeScreen extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.center,
             children: [
               const Spacer(),
-              
+
               // Logo IoT
               Container(
                 width: 120,
@@ -32,12 +32,12 @@ class WelcomeScreen extends StatelessWidget {
                   color: Colors.green.shade700,
                 ),
               ),
-              
+
               const SizedBox(height: 32),
-              
+
               // Título principal
               Text(
-                'IoT Sensor & Image Monitor',
+                'EcoGrid',
                 style: TextStyle(
                   fontSize: 28,
                   fontWeight: FontWeight.bold,
@@ -45,9 +45,9 @@ class WelcomeScreen extends StatelessWidget {
                 ),
                 textAlign: TextAlign.center,
               ),
-              
+
               const Spacer(),
-              
+
               // Botón continuar
               SizedBox(
                 width: double.infinity,
@@ -66,14 +66,11 @@ class WelcomeScreen extends StatelessWidget {
                   ),
                   child: const Text(
                     'Continuar',
-                    style: TextStyle(
-                      fontSize: 18,
-                      fontWeight: FontWeight.w600,
-                    ),
+                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600),
                   ),
                 ),
               ),
-              
+
               const SizedBox(height: 24),
             ],
           ),

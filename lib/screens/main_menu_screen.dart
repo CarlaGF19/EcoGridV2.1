@@ -759,13 +759,36 @@ class _MainMenuScreenState extends State<MainMenuScreen> {
 } // <-- Fin de _MainMenuScreenState
 
 // ======================================================
-//  NUEVA PANTALLA AÑADIDA: PDFPage 
-// ====================================================== 
+//  NUEVA PANTALLA AÑADIDA: PDFPage
+// ======================================================
 
-class PDFPage extends StatefulWidget { 
-  final String apiBaseUrl; // Recibe la URL de la API 
+class PDFPage extends StatefulWidget {
+  final String apiBaseUrl; // Recibe la URL de la API
 
-  const PDFPage({super.key, required this.apiBaseUrl}); 
+  const PDFPage({super.key, required this.apiBaseUrl});
+
+  // Rango máximo de selección
+  static const int maxYear = 20230;
+  static DateTime get maxDate => DateTime(maxYear, 12, 31);
+  static const List<String> _mesesStatic = <String>[
+    'Enero',
+    'Febrero',
+    'Marzo',
+    'Abril',
+    'Mayo',
+    'Junio',
+    'Julio',
+    'Agosto',
+    'Septiembre',
+    'Octubre',
+    'Noviembre',
+    'Diciembre',
+  ];
+  static String formatDateStatic(DateTime d, {bool onlyYear = false}) {
+    return onlyYear
+        ? d.year.toString()
+        : '${_mesesStatic[d.month - 1]} ${d.day} ${d.year}';
+  }
 
   static const String routeName = '/pdf-page';
   static void open(BuildContext context, String apiBaseUrl) {
@@ -783,10 +806,39 @@ class PDFPage extends StatefulWidget {
 }
 
 class _PDFPageState extends State<PDFPage> {
-  DateTime? fechaInicio; 
-  DateTime? fechaFin; 
-  bool cargando = false; 
-  String? error; 
+  DateTime? fechaInicio;
+  DateTime? fechaFin;
+  bool cargando = false;
+  String? error;
+  static const List<String> _meses = <String>[
+    'Enero',
+    'Febrero',
+    'Marzo',
+    'Abril',
+    'Mayo',
+    'Junio',
+    'Julio',
+    'Agosto',
+    'Septiembre',
+    'Octubre',
+    'Noviembre',
+    'Diciembre',
+  ];
+  final Map<String, String> _cacheFecha = {};
+
+  /// Formatea fechas exclusivamente para visualización.
+  /// - full: "Mes día año" (p.ej.: "Enero 15 2023")
+  /// - year: "YYYY" (p.ej.: "2023")
+  String formatDate(DateTime d, {bool onlyYear = false}) {
+    final String k = '${d.year}-${d.month}-${d.day}-${onlyYear ? 'y' : 'f'}';
+    final String? cached = _cacheFecha[k];
+    if (cached != null) return cached;
+    final String res = onlyYear
+        ? d.year.toString()
+        : '${_meses[d.month - 1]} ${d.day} ${d.year}';
+    _cacheFecha[k] = res;
+    return res;
+  }
 
   bool get _fechasValidas {
     if (fechaInicio == null || fechaFin == null) return false;
@@ -796,7 +848,7 @@ class _PDFPageState extends State<PDFPage> {
   ButtonStyle _buttonStylePrimary(BuildContext context) {
     const Color primary = Color(0xFF009E73);
     return ButtonStyle(
-      minimumSize: MaterialStateProperty.all(const Size(double.infinity, 50)),
+      minimumSize: MaterialStateProperty.all(const Size(0, 44)),
       backgroundColor: MaterialStateProperty.resolveWith<Color>((states) {
         if (states.contains(MaterialState.disabled)) {
           return primary.withOpacity(0.6);
@@ -810,7 +862,9 @@ class _PDFPageState extends State<PDFPage> {
       shape: MaterialStateProperty.all(
         RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
       ),
-      shadowColor: MaterialStateProperty.all(const Color.fromRGBO(0, 160, 120, 0.15)),
+      shadowColor: MaterialStateProperty.all(
+        const Color.fromRGBO(0, 160, 120, 0.15),
+      ),
       elevation: MaterialStateProperty.all(3),
       overlayColor: MaterialStateProperty.all(Colors.white.withOpacity(0.06)),
     );
@@ -819,7 +873,7 @@ class _PDFPageState extends State<PDFPage> {
   ButtonStyle _buttonStyleSecondary(BuildContext context) {
     const Color secondary = Color(0xFF00B7B0);
     return ButtonStyle(
-      minimumSize: MaterialStateProperty.all(const Size(double.infinity, 50)),
+      minimumSize: MaterialStateProperty.all(const Size(0, 44)),
       backgroundColor: MaterialStateProperty.resolveWith<Color>((states) {
         if (states.contains(MaterialState.disabled)) {
           return secondary.withOpacity(0.6);
@@ -833,37 +887,199 @@ class _PDFPageState extends State<PDFPage> {
       shape: MaterialStateProperty.all(
         RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
       ),
-      shadowColor: MaterialStateProperty.all(const Color.fromRGBO(0, 160, 120, 0.15)),
+      shadowColor: MaterialStateProperty.all(
+        const Color.fromRGBO(0, 160, 120, 0.15),
+      ),
       elevation: MaterialStateProperty.all(3),
       overlayColor: MaterialStateProperty.all(Colors.white.withOpacity(0.06)),
     );
   }
 
-  Future<void> seleccionarFechaInicio() async { 
+  Widget _blueButton({
+    required String label,
+    required VoidCallback? onTap,
+    required Key key,
+    bool enabled = true,
+    String? semanticLabel,
+    IconData? icon,
+  }) {
+    const Color base = Color.fromARGB(255, 109, 220, 175);
+    const Color hover = Color(0xFF0F6659);
+    return LayoutBuilder(
+      builder: (context, c) {
+        final double targetWidth = c.maxWidth * 0.85;
+        return Center(
+          child: _InteractiveRectButton(
+            key: key,
+            width: targetWidth,
+            aspectRatio: 5.0,
+            radius: 10.0,
+            baseColor: base,
+            hoverColor: hover,
+            enabled: enabled,
+            label: label,
+            semanticLabel: semanticLabel ?? label,
+            onTap: onTap,
+            icon: icon,
+          ),
+        );
+      },
+    );
+  }
+
+  Future<void> seleccionarFechaInicio() async {
     final picked = await showDatePicker(
       context: context,
       initialDate: fechaInicio ?? DateTime.now(),
-      firstDate: DateTime(2020),
-      lastDate: DateTime.now(),
+      firstDate: DateTime(1, 1, 1),
+      lastDate: PDFPage.maxDate,
+      helpText: '',
+      cancelText: 'Cancelar',
+      confirmText: 'Aceptar',
+      initialEntryMode: DatePickerEntryMode.calendarOnly,
+      builder: (context, child) {
+        final palettePrimary = const Color(0xFF0F6659);
+        final paletteDark = const Color(0xFF247E5A);
+        final paletteAccent = const Color(0xFF63B069);
+        final paletteBorder = const Color(0x6698C98D);
+        return Dialog(
+          backgroundColor: Colors.white.withOpacity(0.12),
+          elevation: 0,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16),
+            side: BorderSide(color: const Color(0x6698C98D), width: 1),
+          ),
+          child: Theme(
+            data: Theme.of(context).copyWith(
+              colorScheme: Theme.of(
+                context,
+              ).colorScheme.copyWith(primary: palettePrimary),
+              datePickerTheme: DatePickerThemeData(
+                headerBackgroundColor: Colors.transparent,
+                headerForegroundColor: palettePrimary,
+                // Encabezado minimalista sin texto ni espaciado adicional
+                dayForegroundColor: MaterialStateProperty.all(Colors.black87),
+                dayOverlayColor: MaterialStateProperty.resolveWith((states) {
+                  if (states.contains(MaterialState.selected)) {
+                    return palettePrimary.withOpacity(0.25);
+                  }
+                  return Colors.transparent;
+                }),
+                dayShape: MaterialStateProperty.all(
+                  RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                ),
+                todayForegroundColor: MaterialStateProperty.all(paletteDark),
+                todayBorder: const BorderSide(
+                  color: Color(0xFF98C98D),
+                  width: 1,
+                ),
+                rangeSelectionBackgroundColor: paletteAccent.withOpacity(0.20),
+                rangeSelectionOverlayColor: MaterialStateProperty.all(
+                  paletteAccent.withOpacity(0.10),
+                ),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(16),
+                  side: BorderSide(color: paletteBorder),
+                ),
+              ),
+              dialogTheme: const DialogThemeData(
+                backgroundColor: Colors.transparent,
+                elevation: 0,
+              ),
+            ),
+            child: ConstrainedBox(
+              constraints: const BoxConstraints(maxWidth: 320, maxHeight: 420),
+              child: child!,
+            ),
+          ),
+        );
+      },
     );
     if (picked != null) setState(() => fechaInicio = picked);
   }
 
-  Future<void> seleccionarFechaFin() async { 
+  Future<void> seleccionarFechaFin() async {
     final picked = await showDatePicker(
       context: context,
       initialDate: fechaFin ?? DateTime.now(),
-      firstDate: DateTime(2020),
-      lastDate: DateTime.now(),
+      firstDate: DateTime(1, 1, 1),
+      lastDate: PDFPage.maxDate,
+      helpText: '',
+      cancelText: 'Cancelar',
+      confirmText: 'Aceptar',
+      initialEntryMode: DatePickerEntryMode.calendarOnly,
+      builder: (context, child) {
+        final palettePrimary = const Color(0xFF0F6659);
+        final paletteDark = const Color(0xFF247E5A);
+        final paletteAccent = const Color(0xFF63B069);
+        final paletteBorder = const Color(0x6698C98D);
+        return Dialog(
+          backgroundColor: Colors.white.withOpacity(0.12),
+          elevation: 0,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16),
+            side: BorderSide(color: const Color(0x6698C98D), width: 1),
+          ),
+          child: Theme(
+            data: Theme.of(context).copyWith(
+              colorScheme: Theme.of(
+                context,
+              ).colorScheme.copyWith(primary: palettePrimary),
+              datePickerTheme: DatePickerThemeData(
+                headerBackgroundColor: Colors.transparent,
+                headerForegroundColor: palettePrimary,
+                // Encabezado minimalista sin texto ni padding adicional
+                dayForegroundColor: MaterialStateProperty.all(Colors.black87),
+                dayOverlayColor: MaterialStateProperty.resolveWith((states) {
+                  if (states.contains(MaterialState.selected)) {
+                    return palettePrimary.withOpacity(0.25);
+                  }
+                  return Colors.transparent;
+                }),
+                dayShape: MaterialStateProperty.all(
+                  RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                ),
+                todayForegroundColor: MaterialStateProperty.all(paletteDark),
+                todayBorder: const BorderSide(
+                  color: Color(0xFF98C98D),
+                  width: 1,
+                ),
+                rangeSelectionBackgroundColor: paletteAccent.withOpacity(0.20),
+                rangeSelectionOverlayColor: MaterialStateProperty.all(
+                  paletteAccent.withOpacity(0.10),
+                ),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(16),
+                  side: BorderSide(color: paletteBorder),
+                ),
+              ),
+              dialogTheme: const DialogThemeData(
+                backgroundColor: Colors.transparent,
+                elevation: 0,
+              ),
+            ),
+            child: ConstrainedBox(
+              constraints: const BoxConstraints(maxWidth: 320, maxHeight: 420),
+              child: child!,
+            ),
+          ),
+        );
+      },
     );
     if (picked != null) setState(() => fechaFin = picked);
   }
 
-  Future<void> generarPDF() async { 
+  Future<void> generarPDF() async {
     if (!_fechasValidas) {
-      setState(() => error = fechaInicio == null || fechaFin == null
-          ? "Seleccione ambas fechas primero"
-          : "La fecha de inicio no puede ser posterior a la fecha de fin");
+      setState(
+        () => error = fechaInicio == null || fechaFin == null
+            ? "Seleccione ambas fechas primero"
+            : "La fecha de inicio no puede ser posterior a la fecha de fin",
+      );
       return;
     }
 
@@ -1001,16 +1217,19 @@ class _PDFPageState extends State<PDFPage> {
     }
   }
 
-  @override 
-  Widget build(BuildContext context) { 
-    // Usamos un tema que coincida con tu app 
-    final theme = Theme.of(context); 
+  @override
+  Widget build(BuildContext context) {
+    // Usamos un tema que coincida con tu app
+    final theme = Theme.of(context);
 
     return Scaffold(
       appBar: AppBar(
         title: const Text(
           "Generar Reporte PDF",
-          style: TextStyle(fontWeight: FontWeight.w600, color: Color(0xFF009E73)),
+          style: TextStyle(
+            fontWeight: FontWeight.w600,
+            color: Color(0xFF009E73),
+          ),
         ),
         backgroundColor: Colors.white,
         elevation: 2,
@@ -1027,84 +1246,52 @@ class _PDFPageState extends State<PDFPage> {
                 : Padding(
                     padding: screenPad,
                     child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
                       children: [
-                        // Panel glassmorphism para filtros
-                        RepaintBoundary(
-                          child: ClipRRect(
-                            borderRadius: BorderRadius.circular(16),
-                            child: BackdropFilter(
-                              filter: ui.ImageFilter.blur(sigmaX: 12, sigmaY: 12),
-                              child: Container(
-                                width: double.infinity,
-                                padding: EdgeInsets.symmetric(
-                                  horizontal: isSmall ? 16 : 20,
-                                  vertical: isSmall ? 16 : 20,
-                                ),
-                                decoration: BoxDecoration(
-                                  color: Colors.white.withOpacity(0.25),
-                                  borderRadius: BorderRadius.circular(16),
-                                  border: Border.all(color: const Color(0x80009E73)),
-                                  boxShadow: const [
-                                    BoxShadow(
-                                      color: Color.fromRGBO(0, 160, 120, 0.15),
-                                      blurRadius: 8,
-                                      offset: Offset(0, 2),
-                                    ),
-                                  ],
-                                  gradient: const LinearGradient(
-                                    begin: Alignment.topCenter,
-                                    end: Alignment.bottomCenter,
-                                    colors: [
-                                      Color.fromRGBO(255, 255, 255, 0.35),
-                                      Color.fromRGBO(255, 255, 255, 0.15),
-                                    ],
-                                  ),
-                                ),
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                                  children: [
-                                    ElevatedButton.icon(
-                                      icon: const Icon(Icons.calendar_today),
-                                      onPressed: seleccionarFechaInicio,
-                                      label: Text(
-                                        fechaInicio == null
-                                            ? "Seleccionar fecha inicio"
-                                            : "Inicio: ${fechaInicio!.toLocal().toIso8601String().split('T')[0]}",
-                                      ),
-                                      style: _buttonStylePrimary(context),
-                                    ),
-                                    const SizedBox(height: 16),
-                                    ElevatedButton.icon(
-                                      icon: const Icon(Icons.calendar_today),
-                                      onPressed: seleccionarFechaFin,
-                                      label: Text(
-                                        fechaFin == null
-                                            ? "Seleccionar fecha fin"
-                                            : "Fin: ${fechaFin!.toLocal().toIso8601String().split('T')[0]}",
-                                      ),
-                                      style: _buttonStylePrimary(context),
-                                    ),
-                                  ],
-                                ),
-                              ),
+                        Column(
+                          crossAxisAlignment: CrossAxisAlignment.center,
+                          children: [
+                            _blueButton(
+                              label: fechaInicio == null
+                                  ? 'Fecha de Inicio'
+                                  : '${fechaInicio!.year.toString().padLeft(4, '0')}-${fechaInicio!.month.toString().padLeft(2, '0')}-${fechaInicio!.day.toString().padLeft(2, '0')}',
+                              onTap: seleccionarFechaInicio,
+                              key: const ValueKey('btn-start-date'),
+                              semanticLabel: 'Seleccionar fecha inicio',
+                              icon: Icons.calendar_today,
                             ),
-                          ),
+                            const SizedBox(height: 18),
+                            _blueButton(
+                              label: fechaFin == null
+                                  ? 'Fecha de Fin'
+                                  : '${fechaFin!.year.toString().padLeft(4, '0')}-${fechaFin!.month.toString().padLeft(2, '0')}-${fechaFin!.day.toString().padLeft(2, '0')}',
+                              onTap: seleccionarFechaFin,
+                              key: const ValueKey('btn-end-date'),
+                              semanticLabel: 'Seleccionar fecha fin',
+                              icon: Icons.calendar_today,
+                            ),
+                            const SizedBox(height: 18),
+                            _blueButton(
+                              label: 'Descargar Reporte',
+                              onTap: _fechasValidas ? generarPDF : null,
+                              key: const ValueKey('btn-download'),
+                              semanticLabel: 'Descargar Reporte',
+                              enabled: _fechasValidas,
+                              icon: Icons.picture_as_pdf,
+                            ),
+                          ],
                         ),
-                        const SizedBox(height: 24),
-                        ElevatedButton.icon(
-                          onPressed: _fechasValidas ? generarPDF : null,
-                          icon: const Icon(Icons.picture_as_pdf, color: Colors.white),
-                          label: const Text("📄 Descargar Reporte", style: TextStyle(color: Colors.white)),
-                          style: _buttonStyleSecondary(context),
-                        ),
+                        const SizedBox(height: 12),
                         if (error != null) ...[
                           const SizedBox(height: 20),
                           Semantics(
                             label: 'Mensaje de error',
                             child: Text(
                               error!,
-                              style: const TextStyle(color: Colors.redAccent, fontSize: 16),
+                              style: const TextStyle(
+                                color: Colors.redAccent,
+                                fontSize: 16,
+                              ),
                               textAlign: TextAlign.center,
                             ),
                           ),
@@ -1115,6 +1302,113 @@ class _PDFPageState extends State<PDFPage> {
           );
         },
       ),
-    ); 
-  } 
+    );
+  }
+}
+
+class _InteractiveRectButton extends StatefulWidget {
+  final double width;
+  final double aspectRatio; // width:height
+  final double radius;
+  final Color baseColor;
+  final Color hoverColor;
+  final bool enabled;
+  final String label;
+  final String semanticLabel;
+  final VoidCallback? onTap;
+  final IconData? icon;
+
+  const _InteractiveRectButton({
+    super.key,
+    required this.width,
+    required this.aspectRatio,
+    required this.radius,
+    required this.baseColor,
+    required this.hoverColor,
+    required this.enabled,
+    required this.label,
+    required this.semanticLabel,
+    required this.onTap,
+    this.icon,
+  });
+
+  @override
+  State<_InteractiveRectButton> createState() => _InteractiveRectButtonState();
+}
+
+class _InteractiveRectButtonState extends State<_InteractiveRectButton> {
+  bool _hover = false;
+  bool _pressed = false;
+
+  @override
+  Widget build(BuildContext context) {
+    final Color bg = !_hover ? widget.baseColor : widget.hoverColor;
+    final Color bgDisabled = widget.baseColor.withOpacity(0.6);
+    final Color fg = Colors.white;
+
+    final boxShadow =
+        const <BoxShadow>[]; // Sin sombreado para bloques delgados
+
+    final child = Semantics(
+      label: widget.semanticLabel,
+      button: true,
+      enabled: widget.enabled,
+      child: MouseRegion(
+        cursor: widget.enabled
+            ? SystemMouseCursors.click
+            : SystemMouseCursors.basic,
+        onEnter: (_) => setState(() => _hover = true),
+        onExit: (_) => setState(() => _hover = false),
+        child: GestureDetector(
+          onTapDown: (_) => setState(() => _pressed = true),
+          onTapCancel: () => setState(() => _pressed = false),
+          onTapUp: (_) => setState(() => _pressed = false),
+          onTap: widget.enabled ? widget.onTap : null,
+          child: AnimatedScale(
+            scale: _pressed ? 0.98 : 1.0,
+            duration: const Duration(milliseconds: 120),
+            curve: Curves.easeOut,
+            child: AnimatedContainer(
+              duration: const Duration(milliseconds: 300),
+              curve: Curves.easeOut,
+              width: widget.width,
+              decoration: BoxDecoration(
+                color: widget.enabled ? bg : bgDisabled,
+                borderRadius: BorderRadius.circular(widget.radius),
+                boxShadow: boxShadow,
+                border: Border.all(color: const Color(0xFF98C98D), width: 1),
+              ),
+              child: AspectRatio(
+                aspectRatio: widget.aspectRatio,
+                child: Center(
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      if (widget.icon != null) ...[
+                        Icon(widget.icon, color: fg, size: 18),
+                        const SizedBox(width: 8),
+                      ],
+                      Text(
+                        widget.label,
+                        textAlign: TextAlign.center,
+                        style: const TextStyle(
+                          fontFamily: 'Roboto',
+                          fontWeight: FontWeight.w500,
+                          fontSize: 16,
+                          color: Colors.white,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+
+    return child;
+  }
 }
