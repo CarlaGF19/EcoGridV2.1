@@ -79,24 +79,23 @@ class _SensorDashboardScreenState extends State<SensorDashboardScreen> {
   }
 
   void _abrirSensor(String tipo, String titulo) {
-    if (esp32Ip == null || esp32Ip!.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("Primero configura la IP del ESP32")),
-      );
-      return;
-    }
-
     Navigator.push(
       context,
       MaterialPageRoute(
-        builder: (_) =>
-            SensorDetailPage(esp32Ip: esp32Ip!, tipo: tipo, titulo: titulo),
+        builder: (_) => SensorDetailPage(
+          esp32Ip: esp32Ip ?? '',
+          tipo: tipo,
+          titulo: titulo,
+        ),
       ),
     );
   }
 
   @override
   Widget build(BuildContext context) {
+    final double screenWidth = MediaQuery.of(context).size.width;
+    final bool isMobile = screenWidth < 500;
+    final double aspect = isMobile ? 0.66 : 0.90;
     return Scaffold(
       backgroundColor: const Color.fromARGB(255, 255, 255, 255),
       appBar: AppBar(
@@ -128,31 +127,36 @@ class _SensorDashboardScreenState extends State<SensorDashboardScreen> {
                 crossAxisCount: 2,
                 crossAxisSpacing: 12,
                 mainAxisSpacing: 12,
-                childAspectRatio: 0.90,
+                childAspectRatio: aspect,
                 children: [
                   SensorCardWithImage(
+                    key: const ValueKey('sensor-card-temperatura'),
                     titulo: "TEMPERATURA",
                     imagePath: "assets/images/sensor_dashboard/s_temp.png",
                     onTap: () => _abrirSensor("temperatura", "Temperatura"),
                   ),
                   SensorCardWithImage(
+                    key: const ValueKey('sensor-card-humedad'),
                     titulo: "HUMEDAD",
                     imagePath: "assets/images/sensor_dashboard/s_humedad.png",
                     onTap: () => _abrirSensor("humedad", "Humedad"),
                   ),
                   SensorCardWithImage(
+                    key: const ValueKey('sensor-card-ph'),
                     titulo: "PH",
                     imagePath: "assets/images/sensor_dashboard/s_ph.png",
                     onTap: () => _abrirSensor("ph", "pH"),
                   ),
                   SensorCardWithImage(
+                    key: const ValueKey('sensor-card-tds'),
                     titulo: "TDS",
                     imagePath: "assets/images/sensor_dashboard/s_tds.png",
                     onTap: () => _abrirSensor("tds", "TDS"),
                   ),
                   SensorCardWithImage(
+                    key: const ValueKey('sensor-card-uv'),
                     titulo: "UV",
-                    imagePath: "assets/icons/sensor_s.png",
+                    imagePath: "assets/images/sensor_dashboard/s_uv.png",
                     onTap: () => _abrirSensor("uv", "UV"),
                   ),
                 ],
@@ -212,7 +216,6 @@ class SensorCard extends StatelessWidget {
               const SizedBox(height: 10),
               Icon(icono, color: Color(0xFF00E0A6), size: 36),
               const SizedBox(height: 10),
-              SensorActionInfo(label: 'Show Details'),
             ],
           ),
         ),
@@ -286,8 +289,8 @@ class _SensorCardWithImageState extends State<SensorCardWithImage> {
     final double baseEm = 14 * MediaQuery.of(context).textScaleFactor;
     // Imagen proporcional al ancho de pantalla, con límites para consistencia
     final double iconSize = (size.width * 0.18).clamp(
-      96.0,
-      isWide ? 132.0 : 120.0,
+      88.0,
+      isWide ? 132.0 : 116.0,
     );
     final List<Color> gradColors = _gradientFor(widget.titulo);
     final Color baseColor = gradColors.first;
@@ -312,267 +315,220 @@ class _SensorCardWithImageState extends State<SensorCardWithImage> {
           offset: const Offset(0, 0),
         ),
     ];
-    return MouseRegion(
-      onEnter: (_) => setState(() => _isHovered = true),
-      onExit: (_) => setState(() => _isHovered = false),
-      child: GestureDetector(
-        onTapDown: (_) => setState(() => _isPressed = true),
-        onTapCancel: () => setState(() => _isPressed = false),
-        // Mantener el estado presionado un poco más para que el brillo se perciba
-        onTapUp: (_) {
-          Future.delayed(const Duration(milliseconds: 220), () {
-            if (mounted) setState(() => _isPressed = false);
-          });
-        },
-        // Brillo al pasar con gesto táctil (sin necesidad de tap)
-        onPanStart: (_) => setState(() => _isHovered = true),
-        onPanUpdate: (_) => setState(() => _isHovered = true),
-        onPanEnd: (_) => setState(() => _isHovered = false),
-        onTap: () {
-          // Sonido de tap sin modificar colores ni temas
-          SystemSound.play(SystemSoundType.click);
-          // Retrasar navegación para que el glow/flash se vea claramente
-          Future.delayed(const Duration(milliseconds: 220), () {
-            widget.onTap();
-          });
-        },
-        child: AnimatedScale(
-          // Prioriza press sobre hover; sin cambios de color
-          scale: _isPressed ? 0.985 : (_isHovered ? 1.03 : 1.0),
-          duration: const Duration(milliseconds: 120),
-          curve: Curves.easeOutCubic,
-          child: AnimatedContainer(
-            duration: const Duration(milliseconds: 220),
-            curve: Curves.easeOut,
-            constraints: const BoxConstraints(minHeight: 240),
-            decoration: BoxDecoration(
-              // Degradado metálico-luminoso premium
-              gradient: LinearGradient(
-                begin: _isHovered
-                    ? const Alignment(-0.75, -0.85)
-                    : const Alignment(-0.6, -0.7),
-                end: _isHovered
-                    ? const Alignment(0.95, 0.85)
-                    : const Alignment(0.9, 0.8),
-                colors: gradColors,
-                stops: gradColors.length == 3
-                    ? const [0.0, 0.5, 1.0]
-                    : const [0.0, 1.0],
-              ),
-              borderRadius: BorderRadius.circular(24),
-              border: Border.all(
-                color: Colors.white.withOpacity(
-                  _isPressed ? 1.0 : (_isHovered ? 0.85 : 0.75),
+    return Semantics(
+      label: 'Show Details',
+      button: true,
+      child: MouseRegion(
+        onEnter: (_) => setState(() => _isHovered = true),
+        onExit: (_) => setState(() => _isHovered = false),
+        child: GestureDetector(
+          onTapDown: (_) => setState(() => _isPressed = true),
+          onTapCancel: () => setState(() => _isPressed = false),
+          // Mantener el estado presionado un poco más para que el brillo se perciba
+          onTapUp: (_) {
+            Future.delayed(const Duration(milliseconds: 220), () {
+              if (mounted) setState(() => _isPressed = false);
+            });
+          },
+          // Brillo al pasar con gesto táctil (sin necesidad de tap)
+          onPanStart: (_) => setState(() => _isHovered = true),
+          onPanUpdate: (_) => setState(() => _isHovered = true),
+          onPanEnd: (_) => setState(() => _isHovered = false),
+          onTap: () {
+            Future.delayed(const Duration(milliseconds: 220), () {
+              widget.onTap();
+            });
+          },
+          child: AnimatedScale(
+            // Prioriza press sobre hover; sin cambios de color
+            scale: _isPressed ? 0.985 : (_isHovered ? 1.03 : 1.0),
+            duration: const Duration(milliseconds: 120),
+            curve: Curves.easeOutCubic,
+            child: AnimatedContainer(
+              duration: const Duration(milliseconds: 220),
+              curve: Curves.easeOut,
+              constraints: const BoxConstraints(minHeight: 236),
+              decoration: BoxDecoration(
+                // Degradado metálico-luminoso premium
+                gradient: LinearGradient(
+                  begin: _isHovered
+                      ? const Alignment(-0.75, -0.85)
+                      : const Alignment(-0.6, -0.7),
+                  end: _isHovered
+                      ? const Alignment(0.95, 0.85)
+                      : const Alignment(0.9, 0.8),
+                  colors: gradColors,
+                  stops: gradColors.length == 3
+                      ? const [0.0, 0.5, 1.0]
+                      : const [0.0, 1.0],
                 ),
-                width: _isPressed ? 3.0 : (_isHovered ? 2.0 : 1.8),
-              ),
-              boxShadow: _isPressed
-                  ? [
-                      ...outerShadows,
-                      BoxShadow(
-                        color: Colors.white.withOpacity(0.45),
-                        blurRadius: 42,
-                        spreadRadius: 2.8,
-                        offset: const Offset(0, 0),
-                      ),
-                      BoxShadow(
-                        color: Colors.white.withOpacity(0.18),
-                        blurRadius: 64,
-                        spreadRadius: 6.0,
-                        offset: const Offset(0, 0),
-                      ),
-                    ]
-                  : outerShadows,
-            ),
-            child: Stack(
-              children: [
-                // Contenido principal en columnas: imagen arriba, título y texto abajo
-                Padding(
-                  // Padding proporcional al tamaño de fuente para mantener respiración visual
-                  padding: EdgeInsets.symmetric(
-                    horizontal: baseEm * 1.2,
-                    vertical: baseEm * 1.0,
+                borderRadius: BorderRadius.circular(24),
+                border: Border.all(
+                  color: Colors.white.withOpacity(
+                    _isPressed ? 1.0 : (_isHovered ? 0.85 : 0.75),
                   ),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.center,
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      // Ícono arriba-izquierda con glow suave
-                      SizedBox(
-                        width: iconSize,
-                        height: iconSize,
-                        child: Stack(
-                          alignment: Alignment.center,
-                          children: [
-                            // Sombra circular suave bajo el ícono, tono del cristal
-                            Container(
-                              width: iconSize,
-                              height: iconSize,
-                              decoration: BoxDecoration(
-                                shape: BoxShape.circle,
-                                boxShadow: [
-                                  BoxShadow(
-                                    color: baseColor.withOpacity(0.22),
-                                    blurRadius: 24,
-                                    spreadRadius: 2,
-                                    offset: const Offset(0, 10),
-                                  ),
-                                ],
-                              ),
-                            ),
-                            AnimatedScale(
-                              duration: const Duration(milliseconds: 160),
-                              scale: _isHovered ? 1.03 : 1.0,
-                              child: Container(
+                  width: _isPressed ? 3.0 : (_isHovered ? 2.0 : 1.8),
+                ),
+                boxShadow: _isPressed
+                    ? [
+                        ...outerShadows,
+                        BoxShadow(
+                          color: Colors.white.withOpacity(0.45),
+                          blurRadius: 42,
+                          spreadRadius: 2.8,
+                          offset: const Offset(0, 0),
+                        ),
+                        BoxShadow(
+                          color: Colors.white.withOpacity(0.18),
+                          blurRadius: 64,
+                          spreadRadius: 6.0,
+                          offset: const Offset(0, 0),
+                        ),
+                      ]
+                    : outerShadows,
+              ),
+              child: Stack(
+                children: [
+                  // Contenido principal en columnas: imagen arriba, título y texto abajo
+                  Padding(
+                    // Padding proporcional al tamaño de fuente para mantener respiración visual
+                    padding: EdgeInsets.symmetric(
+                      horizontal: baseEm * 1.1,
+                      vertical: baseEm * 0.8,
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.center,
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        // Ícono arriba-izquierda con glow suave
+                        SizedBox(
+                          width: iconSize,
+                          height: iconSize,
+                          child: Stack(
+                            alignment: Alignment.center,
+                            children: [
+                              // Sombra circular suave bajo el ícono, tono del cristal
+                              Container(
+                                width: iconSize,
+                                height: iconSize,
                                 decoration: BoxDecoration(
+                                  shape: BoxShape.circle,
                                   boxShadow: [
                                     BoxShadow(
-                                      color: baseColor.withOpacity(0.18),
-                                      blurRadius: 16,
-                                      spreadRadius: 1,
-                                      offset: const Offset(0, 6),
+                                      color: baseColor.withOpacity(0.22),
+                                      blurRadius: 24,
+                                      spreadRadius: 2,
+                                      offset: const Offset(0, 10),
                                     ),
                                   ],
                                 ),
-                                child: Image.asset(
-                                  widget.imagePath,
-                                  width: iconSize,
-                                  height: iconSize,
-                                  fit: BoxFit.contain,
-                                  errorBuilder: (context, error, stackTrace) {
-                                    return Icon(
-                                      Icons.broken_image,
-                                      color: baseColor,
-                                      size: iconSize,
-                                    );
-                                  },
+                              ),
+                              AnimatedScale(
+                                duration: const Duration(milliseconds: 160),
+                                scale: _isHovered ? 1.03 : 1.0,
+                                child: Container(
+                                  decoration: BoxDecoration(
+                                    boxShadow: [
+                                      BoxShadow(
+                                        color: baseColor.withOpacity(0.18),
+                                        blurRadius: 16,
+                                        spreadRadius: 1,
+                                        offset: const Offset(0, 6),
+                                      ),
+                                    ],
+                                  ),
+                                  child: Image.asset(
+                                    widget.imagePath,
+                                    width: iconSize,
+                                    height: iconSize,
+                                    fit: BoxFit.contain,
+                                    errorBuilder: (context, error, stackTrace) {
+                                      return Icon(
+                                        Icons.broken_image,
+                                        color: baseColor,
+                                        size: iconSize,
+                                      );
+                                    },
+                                  ),
                                 ),
                               ),
-                            ),
-                          ],
+                            ],
+                          ),
                         ),
-                      ),
-                      // Separación proporcional entre imagen y texto
-                      SizedBox(height: baseEm * 0.8),
-                      // Título y acción abajo
-                      Column(
-                        crossAxisAlignment: CrossAxisAlignment.center,
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          // Asegura ancho fijo y truncado seguro del título
-                          SizedBox(
-                            width: double.infinity,
-                            child: Text(
-                              widget.titulo,
-                              style: TextStyle(
-                                color: Colors.white,
-                                fontWeight: FontWeight.w700,
-                                fontSize: 14,
-                                letterSpacing: 0.1,
-                                shadows: [
-                                  Shadow(
-                                    color: accentColor.withOpacity(0.35),
-                                    blurRadius: 2.0,
-                                    offset: const Offset(0, 1),
-                                  ),
-                                ],
+                        // Separación proporcional entre imagen y texto
+                        SizedBox(height: baseEm * 0.6),
+                        // Título y acción abajo
+                        Column(
+                          crossAxisAlignment: CrossAxisAlignment.center,
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            // Asegura ancho fijo y truncado seguro del título
+                            SizedBox(
+                              width: double.infinity,
+                              child: Text(
+                                widget.titulo,
+                                style: TextStyle(
+                                  color: Colors.white,
+                                  fontWeight: FontWeight.w700,
+                                  fontSize: 14,
+                                  letterSpacing: 0.1,
+                                  shadows: [
+                                    Shadow(
+                                      color: accentColor.withOpacity(0.35),
+                                      blurRadius: 2.0,
+                                      offset: const Offset(0, 1),
+                                    ),
+                                  ],
+                                ),
+                                maxLines: 1,
+                                softWrap: false,
+                                overflow: TextOverflow.ellipsis,
+                                textAlign: TextAlign.center,
                               ),
-                              maxLines: 1,
-                              softWrap: false,
-                              overflow: TextOverflow.ellipsis,
-                              textAlign: TextAlign.center,
                             ),
+                            SizedBox(height: baseEm * 0.5),
+                          ],
+                        ),
+                      ],
+                    ),
+                  ),
+
+                  // Reflejo especular suave en diagonal (de arriba izq a abajo der)
+                  Positioned.fill(
+                    child: IgnorePointer(
+                      child: Container(
+                        decoration: BoxDecoration(
+                          borderRadius: BorderRadius.circular(24),
+                          gradient: LinearGradient(
+                            begin: _isHovered
+                                ? Alignment.topLeft
+                                : Alignment.topRight,
+                            end: _isHovered
+                                ? Alignment.bottomRight
+                                : Alignment.bottomLeft,
+                            colors: [
+                              Colors.white.withOpacity(
+                                _isPressed ? 0.52 : (_isHovered ? 0.34 : 0.28),
+                              ),
+                              Colors.transparent,
+                            ],
                           ),
-                          SizedBox(height: baseEm * 0.6),
-                          SensorActionInfo(
-                            label: 'Show Details',
-                            glowColor: accentColor,
-                          ),
-                        ],
-                      ),
-                    ],
-                  ),
-                ),
-
-                // Reflejo especular suave en diagonal (de arriba izq a abajo der)
-                Positioned.fill(
-                  child: IgnorePointer(
-                    child: Container(
-                      decoration: BoxDecoration(
-                        borderRadius: BorderRadius.circular(24),
-                        gradient: LinearGradient(
-                          begin: _isHovered
-                              ? Alignment.topLeft
-                              : Alignment.topRight,
-                          end: _isHovered
-                              ? Alignment.bottomRight
-                              : Alignment.bottomLeft,
-                          colors: [
-                            Colors.white.withOpacity(
-                              _isPressed ? 0.52 : (_isHovered ? 0.34 : 0.28),
-                            ),
-                            Colors.transparent,
-                          ],
                         ),
                       ),
                     ),
                   ),
-                ),
 
-                // Brillo radial en la esquina superior izquierda (20% 20%)
-                Positioned.fill(
-                  child: IgnorePointer(
-                    child: Container(
-                      decoration: BoxDecoration(
-                        borderRadius: BorderRadius.circular(24),
-                        gradient: RadialGradient(
-                          center: Alignment.topLeft,
-                          radius: 0.8,
-                          colors: [
-                            Colors.white.withOpacity(0.32),
-                            Colors.transparent,
-                          ],
-                        ),
-                      ),
-                    ),
-                  ),
-                ),
-
-                // Luz ambiental inferior simulando inset (brillo reflejado del sensor)
-                Positioned.fill(
-                  child: IgnorePointer(
-                    child: Container(
-                      decoration: BoxDecoration(
-                        borderRadius: BorderRadius.circular(24),
-                        gradient: LinearGradient(
-                          begin: Alignment.bottomCenter,
-                          end: Alignment.topCenter,
-                          colors: [
-                            accentColor.withOpacity(_isPressed ? 0.55 : 0.35),
-                            Colors.transparent,
-                          ],
-                          stops: _isPressed
-                              ? const [0.0, 0.35]
-                              : const [0.0, 0.25],
-                        ),
-                      ),
-                    ),
-                  ),
-                ),
-
-                // Eliminada sombra interna gris para evitar opacidad no deseada
-                // Halo interno extra en hover para simular "energía activa"
-                if (_isHovered)
+                  // Brillo radial en la esquina superior izquierda (20% 20%)
                   Positioned.fill(
                     child: IgnorePointer(
                       child: Container(
                         decoration: BoxDecoration(
                           borderRadius: BorderRadius.circular(24),
                           gradient: RadialGradient(
-                            center: Alignment.center,
-                            radius: 1.0,
+                            center: Alignment.topLeft,
+                            radius: 0.8,
                             colors: [
-                              accentColor.withOpacity(0.18),
+                              Colors.white.withOpacity(0.32),
                               Colors.transparent,
                             ],
                           ),
@@ -581,30 +537,74 @@ class _SensorCardWithImageState extends State<SensorCardWithImage> {
                     ),
                   ),
 
-                // Flash sutil al presionar (más brillo temporal sin cambiar paleta)
-                Positioned.fill(
-                  child: IgnorePointer(
-                    child: AnimatedOpacity(
-                      opacity: _isPressed ? 0.28 : 0.0,
-                      duration: const Duration(milliseconds: 220),
-                      curve: Curves.easeOut,
+                  // Luz ambiental inferior simulando inset (brillo reflejado del sensor)
+                  Positioned.fill(
+                    child: IgnorePointer(
                       child: Container(
                         decoration: BoxDecoration(
                           borderRadius: BorderRadius.circular(24),
-                          gradient: const RadialGradient(
-                            center: Alignment.center,
-                            radius: 0.85,
+                          gradient: LinearGradient(
+                            begin: Alignment.bottomCenter,
+                            end: Alignment.topCenter,
                             colors: [
-                              Color.fromARGB(255, 255, 255, 255),
+                              accentColor.withOpacity(_isPressed ? 0.55 : 0.35),
                               Colors.transparent,
                             ],
+                            stops: _isPressed
+                                ? const [0.0, 0.35]
+                                : const [0.0, 0.25],
                           ),
                         ),
                       ),
                     ),
                   ),
-                ),
-              ],
+
+                  // Eliminada sombra interna gris para evitar opacidad no deseada
+                  // Halo interno extra en hover para simular "energía activa"
+                  if (_isHovered)
+                    Positioned.fill(
+                      child: IgnorePointer(
+                        child: Container(
+                          decoration: BoxDecoration(
+                            borderRadius: BorderRadius.circular(24),
+                            gradient: RadialGradient(
+                              center: Alignment.center,
+                              radius: 1.0,
+                              colors: [
+                                accentColor.withOpacity(0.18),
+                                Colors.transparent,
+                              ],
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
+
+                  // Flash sutil al presionar (más brillo temporal sin cambiar paleta)
+                  Positioned.fill(
+                    child: IgnorePointer(
+                      child: AnimatedOpacity(
+                        opacity: _isPressed ? 0.28 : 0.0,
+                        duration: const Duration(milliseconds: 220),
+                        curve: Curves.easeOut,
+                        child: Container(
+                          decoration: BoxDecoration(
+                            borderRadius: BorderRadius.circular(24),
+                            gradient: const RadialGradient(
+                              center: Alignment.center,
+                              radius: 0.85,
+                              colors: [
+                                Color.fromARGB(255, 255, 255, 255),
+                                Colors.transparent,
+                              ],
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
             ),
           ),
         ),
@@ -615,12 +615,12 @@ class _SensorCardWithImageState extends State<SensorCardWithImage> {
 
 // Botón reutilizable tipo "píldora" para el Sensor Dashboard
 class SensorActionButton extends StatefulWidget {
-  final String label;
+  final String iconAsset;
   final VoidCallback onTap;
 
   const SensorActionButton({
     super.key,
-    required this.label,
+    required this.iconAsset,
     required this.onTap,
   });
 
@@ -637,8 +637,10 @@ class _SensorActionButtonState extends State<SensorActionButton> {
     const Color borderColor = Color(0xFF009E73);
     const Color bgBase = Color(0xFFE6FFF5); // fondo mint claro
     const Color bgHover = Color(0xFF6DFFF5); // hover mint
-    final Color textColor = borderColor;
     final Color bg = _hovering ? bgHover : bgBase;
+    final double em = 14 * MediaQuery.of(context).textScaleFactor;
+    final double btnSize = (em * 3.2).clamp(40.0, 48.0);
+    final double iconSize = (btnSize * 0.58).clamp(22.0, 26.0);
 
     return MouseRegion(
       onEnter: (_) => setState(() => _hovering = true),
@@ -647,62 +649,33 @@ class _SensorActionButtonState extends State<SensorActionButton> {
         onTapDown: (_) => setState(() => _pressed = true),
         onTapCancel: () => setState(() => _pressed = false),
         onTapUp: (_) => setState(() => _pressed = false),
-        onTap: widget.onTap,
+        onTap: () {
+          Future.delayed(const Duration(milliseconds: 220), () {
+            widget.onTap();
+          });
+        },
         child: AnimatedContainer(
           duration: const Duration(milliseconds: 150),
           curve: Curves.easeOut,
-          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
-          decoration: BoxDecoration(
-            color: bg,
-            borderRadius: BorderRadius.circular(20),
-            border: Border.all(color: borderColor, width: 1),
-            boxShadow: const [
-              BoxShadow(
-                color: Color.fromRGBO(0, 160, 120, 0.15),
-                blurRadius: 10,
-                offset: Offset(0, 4),
-              ),
-            ],
-          ),
+          width: btnSize,
+          height: btnSize,
           transform: Matrix4.identity()..scale(_pressed ? 0.98 : 1.0),
-          child: Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              // Imagen pequeña dentro del botón
-              Image.asset('assets/icons/sensor_s.png', width: 22, height: 22),
-              const SizedBox(width: 8),
-              // Texto principal + mini texto
-              Flexible(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Text(
-                      widget.label,
-                      style: TextStyle(
-                        color: textColor,
-                        fontWeight: FontWeight.w600,
-                        fontSize: 12,
-                      ),
-                      maxLines: 1,
-                      softWrap: false,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                    Text(
-                      'detalles',
-                      style: TextStyle(
-                        color: const Color(0xFF009E73).withOpacity(0.85),
-                        fontSize: 10,
-                        fontWeight: FontWeight.w500,
-                      ),
-                      maxLines: 1,
-                      softWrap: false,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                  ],
+          child: ClipOval(
+            child: Container(
+              color: bg,
+              alignment: Alignment.center,
+              child: Image.asset(
+                widget.iconAsset,
+                width: iconSize,
+                height: iconSize,
+                fit: BoxFit.contain,
+                errorBuilder: (context, error, stackTrace) => const Icon(
+                  Icons.insert_chart_outlined,
+                  color: Color(0xFF009E73),
+                  size: 22,
                 ),
               ),
-            ],
+            ),
           ),
         ),
       ),
@@ -711,34 +684,6 @@ class _SensorActionButtonState extends State<SensorActionButton> {
 }
 
 // Bloque informativo no interactivo (imagen + texto + mini texto)
-class SensorActionInfo extends StatelessWidget {
-  final String label;
-  final Color? glowColor; // opcional: brillo acorde al color dominante
-  const SensorActionInfo({super.key, required this.label, this.glowColor});
-
-  @override
-  Widget build(BuildContext context) {
-    return Text(
-      label,
-      style: TextStyle(
-        color: Colors.white.withOpacity(0.70),
-        fontWeight: FontWeight.w700,
-        fontSize: 13,
-        shadows: [
-          Shadow(
-            color: (glowColor ?? const Color(0xFF00E0A6)).withOpacity(0.35),
-            blurRadius: 3,
-            offset: const Offset(0, 1),
-          ),
-        ],
-      ),
-      maxLines: 1,
-      softWrap: false,
-      overflow: TextOverflow.ellipsis,
-      textAlign: TextAlign.center,
-    );
-  }
-}
 
 // Eliminado el formateador de hora HH:MM según requerimiento
 

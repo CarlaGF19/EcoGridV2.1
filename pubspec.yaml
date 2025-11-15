@@ -38,3 +38,4 @@ flutter:
     - assets/images/sensor_dashboard/s_humedad.png
     - assets/images/sensor_dashboard/s_ph.png
     - assets/images/sensor_dashboard/s_tds.png
+    - assets/images/sensor_dashboard/s_uv.png

@@ -13,10 +13,10 @@ Este documento explica cómo la app se conecta al dispositivo (ESP32) o a una AP
 
 ## Configuración Inicial
 1. Red WiFi compartida entre teléfono/emulador y el ESP32 o servidor de API.
-2. IP o URL del backend:
+2. IP o URL del backend (la IP del ESP32 es opcional si usas la Web App):
    - ESP32: por ejemplo `http://192.168.1.50`.
    - Google Sheets (Apps Script): URL del Web App publicada (p. ej. `https://script.google.com/.../exec`).
-3. Guardar dirección en la app:
+3. Guardar dirección en la app (opcional para ESP32 si usas Web App):
    - Abrir la pantalla de configuración del dispositivo.
    - Ingresar `esp32Ip` (para ESP32) o `api_base_url` (para Sheets) y guardar.
    - Se persiste en `SharedPreferences` para que el dashboard y el detalle la usen.

@@ -78,6 +78,11 @@ Este documento explica cómo la app se conecta hoy a las fuentes de datos, las r
   - Misma detección de `api_base_url`/`DEFAULT_API_BASE_URL`.
   - Si hay URL efectiva, consume `endpoint=history`. Si no, consume `http://<esp32_ip>/<tipo>`.
 
+## Cambio: eliminación del bloqueo inicial en Sensor Dashboard
+- Se retiró el bloqueo que exigía configurar la IP del ESP32 para abrir los detalles.
+- El Dashboard navega siempre al detalle del sensor; si no hay `esp32_ip`, se usa la Web App por defecto.
+- `SensorDetailPage` acepta `esp32Ip` opcional y prioriza la API; solo usa ESP32 si hay IP configurada.
+
 ## Ubicaciones en código
 - `lib/constants/app_config.dart`: define `AppConfig.DEFAULT_API_BASE_URL` (fallback para Web App).
 - `lib/screens/main_menu_screen.dart`: lógica dual-mode para `lastReading` (Sheets) o `/sensors` (ESP32).

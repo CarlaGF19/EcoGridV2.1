@@ -6,13 +6,13 @@ import 'dart:async';
 import 'package:shared_preferences/shared_preferences.dart';
 
 class SensorDetailPage extends StatefulWidget {
-  final String esp32Ip;
+  final String? esp32Ip;
   final String tipo;
   final String titulo;
 
   const SensorDetailPage({
     super.key,
-    required this.esp32Ip,
+    this.esp32Ip,
     required this.tipo,
     required this.titulo,
   });
@@ -77,11 +77,11 @@ class _SensorDetailPageState extends State<SensorDetailPage> {
 
     try {
       if (apiBaseUrl != null && apiBaseUrl!.isNotEmpty) {
-        // Modo API: Llama a ambos endpoints en paralelo
         await Future.wait([_fetchApiHistory(), _fetchApiLastReading()]);
       } else {
-        // Modo ESP32: Llama al endpoint simple (no tendrá fecha/hora)
-        await _fetchEsp32Reading();
+        if (widget.esp32Ip != null && widget.esp32Ip!.isNotEmpty) {
+          await _fetchEsp32Reading();
+        }
       }
     } catch (e) {
       debugPrint("Error actualizando datos: $e");
