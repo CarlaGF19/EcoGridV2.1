@@ -784,6 +784,20 @@ class PDFPage extends StatefulWidget {
   }
 
   static const String routeName = '/pdf-page';
+
+  // Colores específicos para botones de cancelar y aceptar
+  static const Color colorCancelar = Color.fromARGB(
+    255,
+    220,
+    53,
+    69,
+  ); // Rojo para cancelar
+  static const Color colorAceptar = Color.fromARGB(
+    255,
+    40,
+    167,
+    69,
+  ); // Verde para aceptar
   static void open(BuildContext context, String apiBaseUrl) {
     Navigator.push(
       context,
@@ -903,17 +917,57 @@ class _PDFPageState extends State<PDFPage> {
           ),
           child: Theme(
             data: Theme.of(context).copyWith(
-              colorScheme: Theme.of(
-                context,
-              ).colorScheme.copyWith(primary: palettePrimary),
+              colorScheme: Theme.of(context).colorScheme.copyWith(
+                primary: const Color.fromARGB(255, 168, 255, 102),
+              ),
+              textButtonTheme: TextButtonThemeData(
+                style: ButtonStyle(
+                  foregroundColor: WidgetStateProperty.resolveWith((states) {
+                    if (states.contains(WidgetState.focused) ||
+                        states.contains(WidgetState.hovered) ||
+                        states.contains(WidgetState.pressed)) {
+                      return Colors.white;
+                    }
+                    return Colors
+                        .black; // WCAG AA compliance - black text for better contrast
+                  }),
+                  backgroundColor: WidgetStateProperty.resolveWith((states) {
+                    // Accept button color (green)
+                    Color baseColor = PDFPage.colorAceptar;
+
+                    if (states.contains(WidgetState.pressed)) {
+                      return baseColor.withValues(alpha: 0.8);
+                    } else if (states.contains(WidgetState.hovered)) {
+                      return baseColor.withValues(alpha: 0.9);
+                    }
+                    return baseColor;
+                  }),
+                  overlayColor: WidgetStatePropertyAll(
+                    PDFPage.colorAceptar.withValues(alpha: 0.1),
+                  ),
+                  padding: WidgetStatePropertyAll(
+                    EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                  ),
+                  shape: WidgetStatePropertyAll(
+                    RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                  ),
+                ),
+              ),
               datePickerTheme: DatePickerThemeData(
-                headerBackgroundColor: Colors.transparent,
-                headerForegroundColor: palettePrimary,
+                headerBackgroundColor: const Color.fromARGB(255, 249, 248, 250),
+                headerForegroundColor: const Color.fromARGB(255, 32, 164, 111),
                 // Encabezado minimalista sin texto ni espaciado adicional
-                dayForegroundColor: WidgetStatePropertyAll(Colors.black87),
+                dayForegroundColor: WidgetStatePropertyAll(Colors.black),
                 dayOverlayColor: WidgetStateProperty.resolveWith((states) {
                   if (states.contains(WidgetState.selected)) {
-                    return palettePrimary.withValues(alpha: 0.25);
+                    return const Color.fromARGB(
+                      255,
+                      252,
+                      243,
+                      174,
+                    ).withValues(alpha: 0.3);
                   }
                   return Colors.transparent;
                 }),
@@ -927,11 +981,19 @@ class _PDFPageState extends State<PDFPage> {
                   color: Color(0xFF98C98D),
                   width: 1,
                 ),
-                rangeSelectionBackgroundColor: paletteAccent.withValues(
-                  alpha: 0.20,
-                ),
+                rangeSelectionBackgroundColor: const Color.fromARGB(
+                  255,
+                  32,
+                  164,
+                  111,
+                ).withValues(alpha: 0.15),
                 rangeSelectionOverlayColor: WidgetStatePropertyAll(
-                  paletteAccent.withValues(alpha: 0.10),
+                  const Color.fromARGB(
+                    255,
+                    32,
+                    164,
+                    111,
+                  ).withValues(alpha: 0.08),
                 ),
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(16),
@@ -971,7 +1033,12 @@ class _PDFPageState extends State<PDFPage> {
         final paletteAccent = const Color(0xFF63B069);
         final paletteBorder = const Color(0x6698C98D);
         return Dialog(
-          backgroundColor: Colors.white.withValues(alpha: 0.12),
+          backgroundColor: const Color.fromARGB(
+            255,
+            255,
+            255,
+            255,
+          ).withValues(alpha: 0.12),
           elevation: 0,
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(16),
@@ -979,17 +1046,57 @@ class _PDFPageState extends State<PDFPage> {
           ),
           child: Theme(
             data: Theme.of(context).copyWith(
-              colorScheme: Theme.of(
-                context,
-              ).colorScheme.copyWith(primary: palettePrimary),
+              colorScheme: Theme.of(context).colorScheme.copyWith(
+                primary: const Color.fromARGB(255, 168, 255, 102),
+              ),
+              textButtonTheme: TextButtonThemeData(
+                style: ButtonStyle(
+                  foregroundColor: WidgetStateProperty.resolveWith((states) {
+                    if (states.contains(WidgetState.focused) ||
+                        states.contains(WidgetState.hovered) ||
+                        states.contains(WidgetState.pressed)) {
+                      return Colors.white;
+                    }
+                    return Colors
+                        .black; // WCAG AA compliance - black text for better contrast
+                  }),
+                  backgroundColor: WidgetStateProperty.resolveWith((states) {
+                    // Accept button color (green)
+                    Color baseColor = PDFPage.colorAceptar;
+
+                    if (states.contains(WidgetState.pressed)) {
+                      return baseColor.withValues(alpha: 0.8);
+                    } else if (states.contains(WidgetState.hovered)) {
+                      return baseColor.withValues(alpha: 0.9);
+                    }
+                    return baseColor;
+                  }),
+                  overlayColor: WidgetStatePropertyAll(
+                    PDFPage.colorAceptar.withValues(alpha: 0.1),
+                  ),
+                  padding: WidgetStatePropertyAll(
+                    EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                  ),
+                  shape: WidgetStatePropertyAll(
+                    RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                  ),
+                ),
+              ),
               datePickerTheme: DatePickerThemeData(
-                headerBackgroundColor: Colors.transparent,
-                headerForegroundColor: palettePrimary,
+                headerBackgroundColor: const Color.fromARGB(255, 249, 248, 250),
+                headerForegroundColor: const Color.fromARGB(255, 32, 164, 111),
                 // Encabezado minimalista sin texto ni padding adicional
-                dayForegroundColor: WidgetStatePropertyAll(Colors.black87),
+                dayForegroundColor: WidgetStatePropertyAll(Colors.black),
                 dayOverlayColor: WidgetStateProperty.resolveWith((states) {
                   if (states.contains(WidgetState.selected)) {
-                    return palettePrimary.withValues(alpha: 0.25);
+                    return const Color.fromARGB(
+                      255,
+                      253,
+                      254,
+                      189,
+                    ).withValues(alpha: 0.3);
                   }
                   return Colors.transparent;
                 }),
@@ -1003,11 +1110,19 @@ class _PDFPageState extends State<PDFPage> {
                   color: Color(0xFF98C98D),
                   width: 1,
                 ),
-                rangeSelectionBackgroundColor: paletteAccent.withValues(
-                  alpha: 0.20,
-                ),
+                rangeSelectionBackgroundColor: const Color.fromARGB(
+                  255,
+                  32,
+                  164,
+                  111,
+                ).withValues(alpha: 0.15),
                 rangeSelectionOverlayColor: WidgetStatePropertyAll(
-                  paletteAccent.withValues(alpha: 0.10),
+                  const Color.fromARGB(
+                    255,
+                    32,
+                    164,
+                    111,
+                  ).withValues(alpha: 0.08),
                 ),
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(16),
